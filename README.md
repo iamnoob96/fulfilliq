@@ -131,6 +131,24 @@ Batch scoring accepts optional `review_capacity` and returns a separate
 The existing `priority_order_ids` threshold-based queue remains compatible. See
 the [request example and capacity semantics](docs/API.md).
 
+Run maturity-safe rolling calibration backtests without changing the active model:
+
+```sh
+uv run fulfilliq evaluate-temporal
+# Optional explicit configuration and a new report path:
+uv run fulfilliq evaluate-temporal --train-days 180 --calibration-days 60 \
+  --evaluation-days 30 --step-days 30 --gap-days 7 \
+  --output artifacts/temporal/my-study.json
+```
+
+The command creates versioned JSON and Markdown reports, compares raw/sigmoid/
+isotonic probabilities with historical-prevalence baselines, audits feature and
+outcome drift, and reports skipped/failed folds. Every purchase at or after the
+old test boundary is excluded before feature history construction. Defaults
+produced 12 valid windows and 66,575 evaluation orders: **no calibration policy
+passed every consistency gate**, so no new model was promoted. See
+[temporal methodology, measured results and limitations](docs/TEMPORAL_VALIDATION.md).
+
 The dataset is about 126 MB of CSVs. Allow a few GB of disk and roughly 1–2 GB RAM for a
 full workflow; CPU parallelism is bounded. Training and mining take minutes depending on
 hardware. Stop the API during database refreshes. This is a local single-writer workflow.

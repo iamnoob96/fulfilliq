@@ -1,5 +1,13 @@
 # Real Olist experimental results
 
+The later [rolling-origin calibration study](TEMPORAL_VALIDATION.md) preserves
+the benchmarks below and excludes the inspected test cohort. It evaluated 12
+historical windows (66,575 orders): no calibration policy beat a recent-prevalence
+baseline in every window. Sigmoid was the least-worst ranking-safe research
+candidate, with slightly worse mean Brier than raw probabilities; no model was
+promoted. See the [original rolling report](results/temporal-20261024-v1.json) and
+[exact-reproduction/matched-window evidence](results/temporal-analysis-20261024.json).
+
 Executed 24 October 2026 on macOS/Apple Silicon, Python 3.11.3. These are actual outputs
 from the pinned original CSVs. Full precision, source hashes, seeds, software versions,
 split boundaries, thresholds and calibration bins are in [experiment.json](results/experiment.json).

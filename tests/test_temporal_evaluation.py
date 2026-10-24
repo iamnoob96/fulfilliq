@@ -133,6 +133,16 @@ def test_real_schema_runner_preserves_artifacts_and_reports_failures(tmp_path, m
         run_temporal_evaluation(
             settings.database_path, settings.artifact_dir, output, small_config(), quick=True
         )
+    # Exhausted coverage is a reproducible diagnostic report, not a fabricated fold.
+    unsupported = run_temporal_evaluation(
+        settings.database_path,
+        settings.artifact_dir,
+        tmp_path / "unsupported.json",
+        small_config(min_observations=100000),
+        quick=True,
+    )
+    assert unsupported["status"] == "no_valid_folds"
+    assert unsupported["excluded_windows"] and not unsupported["folds"]
     from fulfilliq.modeling import temporal_evaluation as module
 
     def fail(*args, **kwargs):

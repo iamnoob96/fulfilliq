@@ -117,6 +117,7 @@ def test_prediction_time_contract(training_frame):
 
 def test_invalid_labeled_times_and_nonbinary_targets_are_excluded(training_frame):
     frame = training_frame.iloc[:4].copy()
+    frame["target_is_late"] = frame.target_is_late.astype(float)
     frame.loc[frame.index[0], "target_is_late"] = 0.5
     frame.loc[frame.index[1], "estimated_at"] = frame.purchased_at.iloc[1] - pd.Timedelta(days=1)
     frame.loc[frame.index[2], "label_available_at"] = frame.delivered_at.iloc[2] - pd.Timedelta(

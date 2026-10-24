@@ -1,0 +1,1302 @@
+{
+  "original_report": "docs/results/temporal-20261024-v1.json",
+  "original_report_sha256": "59db23a40cc2ff96d17e95163ed99c83203808393663af978cfb1488a71f8409",
+  "original_code_revision": "32b5e775e626e52efacec2541c41e0a17fb3f37d",
+  "reproduction_code_revision": "8e8d8d626d3246ccc622eb615ec0b0ecdcdd88a7",
+  "reproduction_report_sha256": "02e477b4de7d4d341abb1ad395db7ba7c168d9541bafd3a5fe2ff2c94b0ec2e2",
+  "reproduction_status": "exact numeric equality",
+  "matching_fold_memberships": 12,
+  "matching_policy_evaluations": 57,
+  "matching_feature_drift_profiles": 12,
+  "total_evaluation_orders": 66575,
+  "pre_protected_purchase_rows": 84524,
+  "active_model_version": "20261024T031015-f87ea646",
+  "active_model_unchanged": true,
+  "summary": {
+    "policies": {
+      "isotonic": {
+        "folds": 9,
+        "metrics": {
+          "roc_auc": {
+            "mean": 0.6409399156663188,
+            "std": 0.07263589493153712,
+            "min": 0.508452873211156,
+            "max": 0.757708237459733,
+            "worst": 0.508452873211156
+          },
+          "pr_auc_average_precision": {
+            "mean": 0.15599669803098296,
+            "std": 0.09449249253205456,
+            "min": 0.03610162473681952,
+            "max": 0.32441976474631656,
+            "worst": 0.03610162473681952
+          },
+          "f1": {
+            "mean": 0.19933559599914574,
+            "std": 0.11972501008972974,
+            "min": 0.06855691917054592,
+            "max": 0.4158080885745041,
+            "worst": 0.06855691917054592
+          },
+          "brier_score": {
+            "mean": 0.08544287467435521,
+            "std": 0.04551555122027486,
+            "min": 0.03960034121332336,
+            "max": 0.18176054113819295,
+            "worst": 0.18176054113819295
+          },
+          "ece_10_equal_width": {
+            "mean": 0.0665368430815746,
+            "std": 0.03753913149477572,
+            "min": 0.018774340395704553,
+            "max": 0.1208255346676237,
+            "worst": 0.1208255346676237
+          },
+          "brier_skill_vs_recent_prevalence": {
+            "mean": 0.014788056999284316,
+            "std": 0.10522265061285958,
+            "min": -0.22721993841082422,
+            "max": 0.16845393003264342,
+            "worst": -0.22721993841082422
+          },
+          "brier_skill_vs_training_prevalence": {
+            "mean": -0.024931853594114674,
+            "std": 0.13738290906639425,
+            "min": -0.3494816897980404,
+            "max": 0.13075549120098395,
+            "worst": -0.3494816897980404
+          },
+          "ap_delta_vs_raw": {
+            "mean": -0.012303893164470161,
+            "std": 0.010229444681912744,
+            "min": -0.03568710448796103,
+            "max": -0.00021474183389190438,
+            "worst": -0.03568710448796103
+          },
+          "top10_precision_delta_vs_raw": {
+            "mean": -0.006397242690666587,
+            "std": 0.027471881031650398,
+            "min": -0.06382978723404259,
+            "max": 0.028657616892910964,
+            "worst": -0.06382978723404259
+          },
+          "top_5_precision": {
+            "mean": 0.20114905222053236,
+            "std": 0.11999273139770453,
+            "min": 0.037267080745341616,
+            "max": 0.4367469879518072,
+            "worst": 0.037267080745341616
+          },
+          "top_5_recall": {
+            "mean": 0.11109628672239263,
+            "std": 0.044778808545400284,
+            "min": 0.05263157894736842,
+            "max": 0.1878048780487805,
+            "worst": 0.05263157894736842
+          },
+          "top_10_precision": {
+            "mean": 0.19095105534075504,
+            "std": 0.12087909209695148,
+            "min": 0.03426791277258567,
+            "max": 0.4117647058823529,
+            "worst": 0.03426791277258567
+          },
+          "top_10_recall": {
+            "mean": 0.2056641665612825,
+            "std": 0.07644126923188917,
+            "min": 0.09649122807017543,
+            "max": 0.3121951219512195,
+            "worst": 0.09649122807017543
+          },
+          "top_20_precision": {
+            "mean": 0.17041442872210422,
+            "std": 0.11093534035994113,
+            "min": 0.04361370716510903,
+            "max": 0.38254080908445703,
+            "worst": 0.04361370716510903
+          },
+          "top_20_recall": {
+            "mean": 0.3583385936055162,
+            "std": 0.09274387413886526,
+            "min": 0.24066390041493776,
+            "max": 0.5146341463414634,
+            "worst": 0.24066390041493776
+          }
+        },
+        "ranking_safe_full_coverage": false,
+        "qualifies_for_advisory_recommendation": false
+      },
+      "raw": {
+        "folds": 12,
+        "metrics": {
+          "roc_auc": {
+            "mean": 0.6405921491561031,
+            "std": 0.06856460947292317,
+            "min": 0.4998383446492079,
+            "max": 0.7665448876283142,
+            "worst": 0.4998383446492079
+          },
+          "pr_auc_average_precision": {
+            "mean": 0.14380265907308712,
+            "std": 0.10060838360488591,
+            "min": 0.036316366570711425,
+            "max": 0.3601068692342776,
+            "worst": 0.036316366570711425
+          },
+          "f1": {
+            "mean": 0.1759921344924924,
+            "std": 0.11324925086369239,
+            "min": 0.06855691917054592,
+            "max": 0.4158080885745041,
+            "worst": 0.06855691917054592
+          },
+          "brier_score": {
+            "mean": 0.07386527445318367,
+            "std": 0.04577378447354477,
+            "min": 0.03275946116633272,
+            "max": 0.18606280726433397,
+            "worst": 0.18606280726433397
+          },
+          "ece_10_equal_width": {
+            "mean": 0.051577727462095484,
+            "std": 0.04222679123315516,
+            "min": 0.009741125665387186,
+            "max": 0.14415427956108476,
+            "worst": 0.14415427956108476
+          },
+          "brier_skill_vs_recent_prevalence": {
+            "mean": 0.012242942450467068,
+            "std": 0.134108541749304,
+            "min": -0.3702302748685169,
+            "max": 0.21998983059927257,
+            "worst": -0.3702302748685169
+          },
+          "brier_skill_vs_training_prevalence": {
+            "mean": -0.013255170363481663,
+            "std": 0.11687633740158825,
+            "min": -0.3652661161325761,
+            "max": 0.1148967355112469,
+            "worst": -0.3652661161325761
+          },
+          "ap_delta_vs_raw": {
+            "mean": 0.0,
+            "std": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "worst": 0.0
+          },
+          "top10_precision_delta_vs_raw": {
+            "mean": 0.0,
+            "std": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "worst": 0.0
+          },
+          "top_5_precision": {
+            "mean": 0.18972521739985904,
+            "std": 0.1351668023651787,
+            "min": 0.043478260869565216,
+            "max": 0.4702549575070821,
+            "worst": 0.043478260869565216
+          },
+          "top_5_recall": {
+            "mean": 0.1161978336187816,
+            "std": 0.04066991481945931,
+            "min": 0.06140350877192982,
+            "max": 0.18048780487804877,
+            "worst": 0.06140350877192982
+          },
+          "top_10_precision": {
+            "mean": 0.16796663499701184,
+            "std": 0.12451060863676755,
+            "min": 0.028037383177570093,
+            "max": 0.4297872340425532,
+            "worst": 0.028037383177570093
+          },
+          "top_10_recall": {
+            "mean": 0.20120755236973523,
+            "std": 0.06704546882107544,
+            "min": 0.07894736842105263,
+            "max": 0.3121951219512195,
+            "worst": 0.07894736842105263
+          },
+          "top_20_precision": {
+            "mean": 0.14575261839297624,
+            "std": 0.10407337875670739,
+            "min": 0.03582554517133956,
+            "max": 0.38254080908445703,
+            "worst": 0.03582554517133956
+          },
+          "top_20_recall": {
+            "mean": 0.35455336089323247,
+            "std": 0.0886472524244196,
+            "min": 0.20175438596491227,
+            "max": 0.5121951219512195,
+            "worst": 0.20175438596491227
+          }
+        },
+        "ranking_safe_full_coverage": true,
+        "qualifies_for_advisory_recommendation": false
+      },
+      "recent_prevalence": {
+        "folds": 12,
+        "metrics": {
+          "roc_auc": {
+            "mean": 0.5,
+            "std": 0.0,
+            "min": 0.5,
+            "max": 0.5,
+            "worst": 0.5
+          },
+          "pr_auc_average_precision": {
+            "mean": 0.08090180023251205,
+            "std": 0.05711986450172156,
+            "min": 0.033161953727506424,
+            "max": 0.22583392476933994,
+            "worst": 0.033161953727506424
+          },
+          "f1": {
+            "mean": 0.1448649243905126,
+            "std": 0.09146118554673234,
+            "min": 0.06419507340134362,
+            "max": 0.3684576192681797,
+            "worst": 0.06419507340134362
+          },
+          "brier_score": {
+            "mean": 0.07661941733781913,
+            "std": 0.049108702205985434,
+            "min": 0.03207492076995934,
+            "max": 0.19840789339680168,
+            "worst": 0.19840789339680168
+          },
+          "ece_10_equal_width": {
+            "mean": 0.057643090759035065,
+            "std": 0.04693262612095165,
+            "min": 0.0011737665785147844,
+            "max": 0.15354129804122937,
+            "worst": 0.15354129804122937
+          },
+          "brier_skill_vs_recent_prevalence": {
+            "mean": 0.0,
+            "std": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "worst": 0.0
+          },
+          "brier_skill_vs_training_prevalence": {
+            "mean": -0.030494598184896388,
+            "std": 0.06843443471599127,
+            "min": -0.19902771411182552,
+            "max": 0.05114184433229152,
+            "worst": -0.19902771411182552
+          },
+          "ap_delta_vs_raw": {
+            "mean": -0.06290085884057507,
+            "std": 0.05183802043614839,
+            "min": -0.17170097133311596,
+            "max": -0.000769126159111802,
+            "worst": -0.17170097133311596
+          },
+          "top10_precision_delta_vs_raw": {
+            "mean": -0.0870124894273151,
+            "std": 0.08571505019620135,
+            "min": -0.29645390070921984,
+            "max": 0.015576323987538939,
+            "worst": -0.29645390070921984
+          },
+          "top_5_precision": {
+            "mean": 0.08917769420525028,
+            "std": 0.06657046550224223,
+            "min": 0.01951219512195122,
+            "max": 0.28313253012048195,
+            "worst": 0.01951219512195122
+          },
+          "top_5_recall": {
+            "mean": 0.061874407806102226,
+            "std": 0.02988027854080818,
+            "min": 0.01984126984126984,
+            "max": 0.1037344398340249,
+            "worst": 0.01984126984126984
+          },
+          "top_10_precision": {
+            "mean": 0.08095414556969677,
+            "std": 0.06336032512564921,
+            "min": 0.026829268292682926,
+            "max": 0.2684766214177979,
+            "worst": 0.026829268292682926
+          },
+          "top_10_recall": {
+            "mean": 0.10826351562275115,
+            "std": 0.045601465279687496,
+            "min": 0.047619047619047616,
+            "max": 0.19264069264069264,
+            "worst": 0.047619047619047616
+          },
+          "top_20_precision": {
+            "mean": 0.08433570593881734,
+            "std": 0.05704921398806505,
+            "min": 0.03418803418803419,
+            "max": 0.24283559577677225,
+            "worst": 0.03418803418803419
+          },
+          "top_20_recall": {
+            "mean": 0.22553665199723474,
+            "std": 0.07555572838329584,
+            "min": 0.12507856693903205,
+            "max": 0.3484848484848485,
+            "worst": 0.12507856693903205
+          }
+        }
+      },
+      "sigmoid": {
+        "folds": 12,
+        "metrics": {
+          "roc_auc": {
+            "mean": 0.6405921491561031,
+            "std": 0.06856460947292317,
+            "min": 0.4998383446492079,
+            "max": 0.7665448876283142,
+            "worst": 0.4998383446492079
+          },
+          "pr_auc_average_precision": {
+            "mean": 0.14380265907308712,
+            "std": 0.10060838360488591,
+            "min": 0.036316366570711425,
+            "max": 0.3601068692342776,
+            "worst": 0.036316366570711425
+          },
+          "f1": {
+            "mean": 0.1759921344924924,
+            "std": 0.11324925086369239,
+            "min": 0.06855691917054592,
+            "max": 0.4158080885745041,
+            "worst": 0.06855691917054592
+          },
+          "brier_score": {
+            "mean": 0.07405093381092487,
+            "std": 0.04535126748639342,
+            "min": 0.03197182065598971,
+            "max": 0.1857779412474179,
+            "worst": 0.1857779412474179
+          },
+          "ece_10_equal_width": {
+            "mean": 0.05271997754775973,
+            "std": 0.04358774869205194,
+            "min": 0.0010135909586343704,
+            "max": 0.12828480894083424,
+            "worst": 0.12828480894083424
+          },
+          "brier_skill_vs_recent_prevalence": {
+            "mean": 0.014350708494419884,
+            "std": 0.08240111274096082,
+            "min": -0.1994288484693294,
+            "max": 0.16907839410994652,
+            "worst": -0.1994288484693294
+          },
+          "brier_skill_vs_training_prevalence": {
+            "mean": -0.015328594088339975,
+            "std": 0.1079872625547785,
+            "min": -0.3189219133131975,
+            "max": 0.11154283391725972,
+            "worst": -0.3189219133131975
+          },
+          "ap_delta_vs_raw": {
+            "mean": 0.0,
+            "std": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "worst": 0.0
+          },
+          "top10_precision_delta_vs_raw": {
+            "mean": 0.0,
+            "std": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "worst": 0.0
+          },
+          "top_5_precision": {
+            "mean": 0.18972521739985904,
+            "std": 0.1351668023651787,
+            "min": 0.043478260869565216,
+            "max": 0.4702549575070821,
+            "worst": 0.043478260869565216
+          },
+          "top_5_recall": {
+            "mean": 0.1161978336187816,
+            "std": 0.04066991481945931,
+            "min": 0.06140350877192982,
+            "max": 0.18048780487804877,
+            "worst": 0.06140350877192982
+          },
+          "top_10_precision": {
+            "mean": 0.16796663499701184,
+            "std": 0.12451060863676755,
+            "min": 0.028037383177570093,
+            "max": 0.4297872340425532,
+            "worst": 0.028037383177570093
+          },
+          "top_10_recall": {
+            "mean": 0.20120755236973523,
+            "std": 0.06704546882107544,
+            "min": 0.07894736842105263,
+            "max": 0.3121951219512195,
+            "worst": 0.07894736842105263
+          },
+          "top_20_precision": {
+            "mean": 0.14575261839297624,
+            "std": 0.10407337875670739,
+            "min": 0.03582554517133956,
+            "max": 0.38254080908445703,
+            "worst": 0.03582554517133956
+          },
+          "top_20_recall": {
+            "mean": 0.35455336089323247,
+            "std": 0.0886472524244196,
+            "min": 0.20175438596491227,
+            "max": 0.5121951219512195,
+            "worst": 0.20175438596491227
+          }
+        },
+        "ranking_safe_full_coverage": true,
+        "qualifies_for_advisory_recommendation": false
+      },
+      "training_prevalence": {
+        "folds": 12,
+        "metrics": {
+          "roc_auc": {
+            "mean": 0.5,
+            "std": 0.0,
+            "min": 0.5,
+            "max": 0.5,
+            "worst": 0.5
+          },
+          "pr_auc_average_precision": {
+            "mean": 0.08090180023251205,
+            "std": 0.05711986450172156,
+            "min": 0.033161953727506424,
+            "max": 0.22583392476933994,
+            "worst": 0.033161953727506424
+          },
+          "f1": {
+            "mean": 0.1448649243905126,
+            "std": 0.09146118554673234,
+            "min": 0.06419507340134362,
+            "max": 0.3684576192681797,
+            "worst": 0.06419507340134362
+          },
+          "brier_score": {
+            "mean": 0.07582674017007145,
+            "std": 0.052235424309927427,
+            "min": 0.03206823718628762,
+            "max": 0.2091017421430948,
+            "worst": 0.2091017421430948
+          },
+          "ece_10_equal_width": {
+            "mean": 0.04201373851294443,
+            "std": 0.05447536980399147,
+            "min": 0.0003093313617975116,
+            "max": 0.1851182836741922,
+            "worst": 0.1851182836741922
+          },
+          "brier_skill_vs_recent_prevalence": {
+            "mean": 0.02562100417309396,
+            "std": 0.059915326088643625,
+            "min": -0.053898302951617794,
+            "max": 0.16599092061792287,
+            "worst": -0.053898302951617794
+          },
+          "brier_skill_vs_training_prevalence": {
+            "mean": 0.0,
+            "std": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "worst": 0.0
+          },
+          "ap_delta_vs_raw": {
+            "mean": -0.06290085884057507,
+            "std": 0.05183802043614839,
+            "min": -0.17170097133311596,
+            "max": -0.000769126159111802,
+            "worst": -0.17170097133311596
+          },
+          "top10_precision_delta_vs_raw": {
+            "mean": -0.0870124894273151,
+            "std": 0.08571505019620135,
+            "min": -0.29645390070921984,
+            "max": 0.015576323987538939,
+            "worst": -0.29645390070921984
+          },
+          "top_5_precision": {
+            "mean": 0.08917769420525028,
+            "std": 0.06657046550224223,
+            "min": 0.01951219512195122,
+            "max": 0.28313253012048195,
+            "worst": 0.01951219512195122
+          },
+          "top_5_recall": {
+            "mean": 0.061874407806102226,
+            "std": 0.02988027854080818,
+            "min": 0.01984126984126984,
+            "max": 0.1037344398340249,
+            "worst": 0.01984126984126984
+          },
+          "top_10_precision": {
+            "mean": 0.08095414556969677,
+            "std": 0.06336032512564921,
+            "min": 0.026829268292682926,
+            "max": 0.2684766214177979,
+            "worst": 0.026829268292682926
+          },
+          "top_10_recall": {
+            "mean": 0.10826351562275115,
+            "std": 0.045601465279687496,
+            "min": 0.047619047619047616,
+            "max": 0.19264069264069264,
+            "worst": 0.047619047619047616
+          },
+          "top_20_precision": {
+            "mean": 0.08433570593881734,
+            "std": 0.05704921398806505,
+            "min": 0.03418803418803419,
+            "max": 0.24283559577677225,
+            "worst": 0.03418803418803419
+          },
+          "top_20_recall": {
+            "mean": 0.22553665199723474,
+            "std": 0.07555572838329584,
+            "min": 0.12507856693903205,
+            "max": 0.3484848484848485,
+            "worst": 0.12507856693903205
+          }
+        }
+      }
+    },
+    "recommended_policy": null,
+    "least_worst_ranking_safe_policy": "sigmoid",
+    "matched_isotonic_comparison": {
+      "folds": 9,
+      "fold_ids": [
+        "20170615T000000",
+        "20171013T000000",
+        "20171112T000000",
+        "20171212T000000",
+        "20180111T000000",
+        "20180210T000000",
+        "20180312T000000",
+        "20180411T000000",
+        "20180511T000000"
+      ],
+      "interpretation": "Same supported windows for each method; descriptive only. Primary recommendation still requires all valid folds.",
+      "policies": {
+        "raw": {
+          "brier_score": 0.08386724214104291,
+          "ece_10_equal_width": 0.05534003177163025,
+          "roc_auc": 0.6455094752018393,
+          "pr_auc_average_precision": 0.16830059119545315,
+          "precision_at_top_10_percent": 0.19734829803142162
+        },
+        "sigmoid": {
+          "brier_score": 0.08577708253923301,
+          "ece_10_equal_width": 0.06741453381062154,
+          "roc_auc": 0.6455094752018393,
+          "pr_auc_average_precision": 0.16830059119545315,
+          "precision_at_top_10_percent": 0.19734829803142162
+        },
+        "isotonic": {
+          "brier_score": 0.08544287467435521,
+          "ece_10_equal_width": 0.0665368430815746,
+          "roc_auc": 0.6409399156663188,
+          "pr_auc_average_precision": 0.15599669803098296,
+          "precision_at_top_10_percent": 0.19095105534075504
+        }
+      }
+    },
+    "promotion": "Not permitted by this evaluation command; existing validation gates remain required"
+  },
+  "maturity_audits": [
+    {
+      "fold_id": "20170615T000000",
+      "train_start": "2016-10-04T00:00:00",
+      "train_end": "2017-04-02T00:00:00",
+      "calibration_start": "2017-04-09T00:00:00",
+      "calibration_end": "2017-06-08T00:00:00",
+      "evaluation_start": "2017-06-15T00:00:00",
+      "evaluation_end": "2017-07-15T00:00:00",
+      "outcome_observation_cutoff": "2017-09-13T00:00:00",
+      "audits": {
+        "train": {
+          "purchase_cohort": 5646,
+          "eligible": 1798,
+          "excluded": 3848,
+          "unlabeled": 372,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 999,
+          "promise_not_mature": 2477,
+          "positives": 44,
+          "negatives": 1754,
+          "first_eligible_purchase": "2016-10-04T09:06:10",
+          "last_eligible_purchase": "2017-02-24T21:13:45",
+          "last_delivery": "2017-03-30T13:22:48",
+          "last_label_available": "2017-03-31T13:22:48"
+        },
+        "calibration": {
+          "purchase_cohort": 6310,
+          "eligible": 1468,
+          "excluded": 4842,
+          "unlabeled": 262,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 1353,
+          "promise_not_mature": 3227,
+          "positives": 148,
+          "negatives": 1320,
+          "first_eligible_purchase": "2017-04-09T00:07:46",
+          "last_eligible_purchase": "2017-05-15T13:04:41",
+          "last_delivery": "2017-06-06T08:35:50",
+          "last_label_available": "2017-06-07T08:35:50"
+        },
+        "evaluation": {
+          "purchase_cohort": 3349,
+          "eligible": 3207,
+          "excluded": 142,
+          "unlabeled": 136,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 3,
+          "promise_not_mature": 3,
+          "positives": 114,
+          "negatives": 3093,
+          "first_eligible_purchase": "2017-06-15T00:18:57",
+          "last_eligible_purchase": "2017-07-14T23:36:32",
+          "last_delivery": "2017-09-06T18:36:25",
+          "last_label_available": "2017-09-07T18:36:25"
+        }
+      }
+    },
+    {
+      "fold_id": "20170715T000000",
+      "train_start": "2016-11-03T00:00:00",
+      "train_end": "2017-05-02T00:00:00",
+      "calibration_start": "2017-05-09T00:00:00",
+      "calibration_end": "2017-07-08T00:00:00",
+      "evaluation_start": "2017-07-15T00:00:00",
+      "evaluation_end": "2017-08-14T00:00:00",
+      "outcome_observation_cutoff": "2017-10-13T00:00:00",
+      "audits": {
+        "train": {
+          "purchase_cohort": 7784,
+          "eligible": 4156,
+          "excluded": 3628,
+          "unlabeled": 420,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 1498,
+          "promise_not_mature": 1710,
+          "positives": 148,
+          "negatives": 4008,
+          "first_eligible_purchase": "2016-12-23T23:16:47",
+          "last_eligible_purchase": "2017-03-28T23:49:15",
+          "last_delivery": "2017-04-30T09:16:01",
+          "last_label_available": "2017-05-01T09:16:01"
+        },
+        "calibration": {
+          "purchase_cohort": 6884,
+          "eligible": 2478,
+          "excluded": 4406,
+          "unlabeled": 272,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 1299,
+          "promise_not_mature": 2835,
+          "positives": 91,
+          "negatives": 2387,
+          "first_eligible_purchase": "2017-05-09T00:18:57",
+          "last_eligible_purchase": "2017-06-09T22:54:32",
+          "last_delivery": "2017-07-06T09:47:41",
+          "last_label_available": "2017-07-07T09:47:41"
+        },
+        "evaluation": {
+          "purchase_cohort": 4025,
+          "eligible": 3890,
+          "excluded": 135,
+          "unlabeled": 126,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 3,
+          "promise_not_mature": 6,
+          "positives": 129,
+          "negatives": 3761,
+          "first_eligible_purchase": "2017-07-15T00:20:17",
+          "last_eligible_purchase": "2017-08-13T23:13:04",
+          "last_delivery": "2017-09-21T11:54:14",
+          "last_label_available": "2017-09-22T11:54:14"
+        }
+      }
+    },
+    {
+      "fold_id": "20170814T000000",
+      "train_start": "2016-12-03T00:00:00",
+      "train_end": "2017-06-01T00:00:00",
+      "calibration_start": "2017-06-08T00:00:00",
+      "calibration_end": "2017-08-07T00:00:00",
+      "evaluation_start": "2017-08-14T00:00:00",
+      "evaluation_end": "2017-09-13T00:00:00",
+      "outcome_observation_cutoff": "2017-11-12T00:00:00",
+      "audits": {
+        "train": {
+          "purchase_cohort": 11367,
+          "eligible": 6465,
+          "excluded": 4902,
+          "unlabeled": 569,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 1346,
+          "promise_not_mature": 2987,
+          "positives": 334,
+          "negatives": 6131,
+          "first_eligible_purchase": "2016-12-23T23:16:47",
+          "last_eligible_purchase": "2017-05-09T20:50:26",
+          "last_delivery": "2017-05-30T09:19:58",
+          "last_label_available": "2017-05-31T09:19:58"
+        },
+        "calibration": {
+          "purchase_cohort": 7255,
+          "eligible": 2148,
+          "excluded": 5107,
+          "unlabeled": 262,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 1551,
+          "promise_not_mature": 3294,
+          "positives": 83,
+          "negatives": 2065,
+          "first_eligible_purchase": "2017-06-08T00:06:50",
+          "last_eligible_purchase": "2017-07-10T22:36:42",
+          "last_delivery": "2017-08-04T19:10:13",
+          "last_label_available": "2017-08-05T19:10:13"
+        },
+        "evaluation": {
+          "purchase_cohort": 4233,
+          "eligible": 4094,
+          "excluded": 139,
+          "unlabeled": 129,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 4,
+          "promise_not_mature": 6,
+          "positives": 163,
+          "negatives": 3931,
+          "first_eligible_purchase": "2017-08-14T06:48:13",
+          "last_eligible_purchase": "2017-09-12T23:58:05",
+          "last_delivery": "2017-11-09T01:33:48",
+          "last_label_available": "2017-11-10T01:33:48"
+        }
+      }
+    },
+    {
+      "fold_id": "20170913T000000",
+      "train_start": "2017-01-02T00:00:00",
+      "train_end": "2017-07-01T00:00:00",
+      "calibration_start": "2017-07-08T00:00:00",
+      "calibration_end": "2017-09-06T00:00:00",
+      "evaluation_start": "2017-09-13T00:00:00",
+      "evaluation_end": "2017-10-13T00:00:00",
+      "outcome_observation_cutoff": "2017-12-12T00:00:00",
+      "audits": {
+        "train": {
+          "purchase_cohort": 14611,
+          "eligible": 9794,
+          "excluded": 4817,
+          "unlabeled": 679,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 1203,
+          "promise_not_mature": 2935,
+          "positives": 480,
+          "negatives": 9314,
+          "first_eligible_purchase": "2017-01-05T11:56:06",
+          "last_eligible_purchase": "2017-06-02T21:55:08",
+          "last_delivery": "2017-06-29T07:27:38",
+          "last_label_available": "2017-06-30T07:27:38"
+        },
+        "calibration": {
+          "purchase_cohort": 8200,
+          "eligible": 2843,
+          "excluded": 5357,
+          "unlabeled": 261,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 1672,
+          "promise_not_mature": 3424,
+          "positives": 85,
+          "negatives": 2758,
+          "first_eligible_purchase": "2017-07-08T00:22:49",
+          "last_eligible_purchase": "2017-08-09T23:01:43",
+          "last_delivery": "2017-09-02T12:07:59",
+          "last_label_available": "2017-09-03T12:07:59"
+        },
+        "evaluation": {
+          "purchase_cohort": 4414,
+          "eligible": 4258,
+          "excluded": 156,
+          "unlabeled": 149,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 1,
+          "promise_not_mature": 6,
+          "positives": 210,
+          "negatives": 4048,
+          "first_eligible_purchase": "2017-09-13T00:03:31",
+          "last_eligible_purchase": "2017-10-12T23:43:48",
+          "last_delivery": "2017-12-05T16:47:02",
+          "last_label_available": "2017-12-06T16:47:02"
+        }
+      }
+    },
+    {
+      "fold_id": "20171013T000000",
+      "train_start": "2017-02-01T00:00:00",
+      "train_end": "2017-07-31T00:00:00",
+      "calibration_start": "2017-08-07T00:00:00",
+      "calibration_end": "2017-10-06T00:00:00",
+      "evaluation_start": "2017-10-13T00:00:00",
+      "evaluation_end": "2017-11-12T00:00:00",
+      "outcome_observation_cutoff": "2018-01-11T00:00:00",
+      "audits": {
+        "train": {
+          "purchase_cohort": 17689,
+          "eligible": 12261,
+          "excluded": 5428,
+          "unlabeled": 778,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 1574,
+          "promise_not_mature": 3076,
+          "positives": 563,
+          "negatives": 11698,
+          "first_eligible_purchase": "2017-02-01T08:42:43",
+          "last_eligible_purchase": "2017-07-03T23:04:43",
+          "last_delivery": "2017-07-27T18:37:35",
+          "last_label_available": "2017-07-28T18:37:35"
+        },
+        "calibration": {
+          "purchase_cohort": 8546,
+          "eligible": 3169,
+          "excluded": 5377,
+          "unlabeled": 263,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 1782,
+          "promise_not_mature": 3332,
+          "positives": 100,
+          "negatives": 3069,
+          "first_eligible_purchase": "2017-08-07T00:18:41",
+          "last_eligible_purchase": "2017-09-11T23:30:04",
+          "last_delivery": "2017-10-01T17:06:30",
+          "last_label_available": "2017-10-02T17:06:30"
+        },
+        "evaluation": {
+          "purchase_cohort": 4501,
+          "eligible": 4324,
+          "excluded": 177,
+          "unlabeled": 167,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 3,
+          "promise_not_mature": 7,
+          "positives": 243,
+          "negatives": 4081,
+          "first_eligible_purchase": "2017-10-13T00:01:23",
+          "last_eligible_purchase": "2017-11-11T23:43:34",
+          "last_delivery": "2018-01-09T18:55:47",
+          "last_label_available": "2018-01-10T18:55:47"
+        }
+      }
+    },
+    {
+      "fold_id": "20171112T000000",
+      "train_start": "2017-03-03T00:00:00",
+      "train_end": "2017-08-30T00:00:00",
+      "calibration_start": "2017-09-06T00:00:00",
+      "calibration_end": "2017-11-05T00:00:00",
+      "evaluation_start": "2017-11-12T00:00:00",
+      "evaluation_end": "2017-12-12T00:00:00",
+      "outcome_observation_cutoff": "2018-02-10T00:00:00",
+      "audits": {
+        "train": {
+          "purchase_cohort": 19887,
+          "eligible": 14074,
+          "excluded": 5813,
+          "unlabeled": 768,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 1555,
+          "promise_not_mature": 3490,
+          "positives": 610,
+          "negatives": 13464,
+          "first_eligible_purchase": "2017-03-03T00:14:01",
+          "last_eligible_purchase": "2017-08-02T22:29:10",
+          "last_delivery": "2017-08-25T19:41:53",
+          "last_label_available": "2017-08-26T19:41:53"
+        },
+        "calibration": {
+          "purchase_cohort": 8711,
+          "eligible": 2858,
+          "excluded": 5853,
+          "unlabeled": 290,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 1604,
+          "promise_not_mature": 3959,
+          "positives": 170,
+          "negatives": 2688,
+          "first_eligible_purchase": "2017-09-06T00:03:37",
+          "last_eligible_purchase": "2017-10-09T23:33:10",
+          "last_delivery": "2017-11-03T19:43:39",
+          "last_label_available": "2017-11-04T19:43:39"
+        },
+        "evaluation": {
+          "purchase_cohort": 8552,
+          "eligible": 8250,
+          "excluded": 302,
+          "unlabeled": 269,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 17,
+          "promise_not_mature": 16,
+          "positives": 1237,
+          "negatives": 7013,
+          "first_eligible_purchase": "2017-11-12T00:00:45",
+          "last_eligible_purchase": "2017-12-11T23:55:56",
+          "last_delivery": "2018-02-06T15:58:54",
+          "last_label_available": "2018-02-07T15:58:54"
+        }
+      }
+    },
+    {
+      "fold_id": "20171212T000000",
+      "train_start": "2017-04-02T00:00:00",
+      "train_end": "2017-09-29T00:00:00",
+      "calibration_start": "2017-10-06T00:00:00",
+      "calibration_end": "2017-12-05T00:00:00",
+      "evaluation_start": "2017-12-12T00:00:00",
+      "evaluation_end": "2018-01-11T00:00:00",
+      "outcome_observation_cutoff": "2018-03-12T00:00:00",
+      "audits": {
+        "train": {
+          "purchase_cohort": 21693,
+          "eligible": 15616,
+          "excluded": 6077,
+          "unlabeled": 775,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 1717,
+          "promise_not_mature": 3585,
+          "positives": 644,
+          "negatives": 14972,
+          "first_eligible_purchase": "2017-04-02T00:07:02",
+          "last_eligible_purchase": "2017-09-01T23:24:45",
+          "last_delivery": "2017-09-25T14:10:25",
+          "last_label_available": "2017-09-26T14:10:25"
+        },
+        "calibration": {
+          "purchase_cohort": 12471,
+          "eligible": 3082,
+          "excluded": 9389,
+          "unlabeled": 428,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 4747,
+          "promise_not_mature": 4214,
+          "positives": 179,
+          "negatives": 2903,
+          "first_eligible_purchase": "2017-10-06T00:03:50",
+          "last_eligible_purchase": "2017-11-06T22:46:03",
+          "last_delivery": "2017-12-01T18:34:25",
+          "last_label_available": "2017-12-02T18:34:25"
+        },
+        "evaluation": {
+          "purchase_cohort": 5194,
+          "eligible": 5003,
+          "excluded": 191,
+          "unlabeled": 135,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 14,
+          "promise_not_mature": 42,
+          "positives": 241,
+          "negatives": 4762,
+          "first_eligible_purchase": "2017-12-12T00:08:49",
+          "last_eligible_purchase": "2018-01-10T23:58:35",
+          "last_delivery": "2018-03-09T17:41:50",
+          "last_label_available": "2018-03-10T17:41:50"
+        }
+      }
+    },
+    {
+      "fold_id": "20180111T000000",
+      "train_start": "2017-05-02T00:00:00",
+      "train_end": "2017-10-29T00:00:00",
+      "calibration_start": "2017-11-05T00:00:00",
+      "calibration_end": "2018-01-04T00:00:00",
+      "evaluation_start": "2018-01-11T00:00:00",
+      "evaluation_end": "2018-02-10T00:00:00",
+      "outcome_observation_cutoff": "2018-04-11T00:00:00",
+      "audits": {
+        "train": {
+          "purchase_cohort": 23660,
+          "eligible": 17383,
+          "excluded": 6277,
+          "unlabeled": 821,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 1592,
+          "promise_not_mature": 3864,
+          "positives": 676,
+          "negatives": 16707,
+          "first_eligible_purchase": "2017-05-02T00:38:57",
+          "last_eligible_purchase": "2017-09-27T23:52:43",
+          "last_delivery": "2017-10-27T00:03:17",
+          "last_label_available": "2017-10-28T00:03:17"
+        },
+        "calibration": {
+          "purchase_cohort": 13231,
+          "eligible": 5389,
+          "excluded": 7842,
+          "unlabeled": 408,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 2938,
+          "promise_not_mature": 4496,
+          "positives": 614,
+          "negatives": 4775,
+          "first_eligible_purchase": "2017-11-05T00:20:43",
+          "last_eligible_purchase": "2017-12-04T23:49:50",
+          "last_delivery": "2018-01-02T13:48:47",
+          "last_label_available": "2018-01-03T13:48:47"
+        },
+        "evaluation": {
+          "purchase_cohort": 7135,
+          "eligible": 6889,
+          "excluded": 246,
+          "unlabeled": 189,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 26,
+          "promise_not_mature": 31,
+          "positives": 504,
+          "negatives": 6385,
+          "first_eligible_purchase": "2018-01-11T00:08:09",
+          "last_eligible_purchase": "2018-02-09T23:56:01",
+          "last_delivery": "2018-04-09T15:58:31",
+          "last_label_available": "2018-04-10T15:58:31"
+        }
+      }
+    },
+    {
+      "fold_id": "20180210T000000",
+      "train_start": "2017-06-01T00:00:00",
+      "train_end": "2017-11-28T00:00:00",
+      "calibration_start": "2017-12-05T00:00:00",
+      "calibration_end": "2018-02-03T00:00:00",
+      "evaluation_start": "2018-02-10T00:00:00",
+      "evaluation_end": "2018-03-12T00:00:00",
+      "outcome_observation_cutoff": "2018-05-11T00:00:00",
+      "audits": {
+        "train": {
+          "purchase_cohort": 27092,
+          "eligible": 18445,
+          "excluded": 8647,
+          "unlabeled": 921,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 4312,
+          "promise_not_mature": 3414,
+          "positives": 751,
+          "negatives": 17694,
+          "first_eligible_purchase": "2017-06-01T00:05:38",
+          "last_eligible_purchase": "2017-11-01T00:43:33",
+          "last_delivery": "2017-11-24T23:41:53",
+          "last_label_available": "2017-11-25T23:41:53"
+        },
+        "calibration": {
+          "purchase_cohort": 12324,
+          "eligible": 3472,
+          "excluded": 8852,
+          "unlabeled": 336,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 3123,
+          "promise_not_mature": 5393,
+          "positives": 251,
+          "negatives": 3221,
+          "first_eligible_purchase": "2017-12-05T00:05:32",
+          "last_eligible_purchase": "2018-01-03T23:47:03",
+          "last_delivery": "2018-02-01T16:58:40",
+          "last_label_available": "2018-02-02T16:58:40"
+        },
+        "evaluation": {
+          "purchase_cohort": 7293,
+          "eligible": 7045,
+          "excluded": 248,
+          "unlabeled": 199,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 28,
+          "promise_not_mature": 21,
+          "positives": 1591,
+          "negatives": 5454,
+          "first_eligible_purchase": "2018-02-10T00:01:06",
+          "last_eligible_purchase": "2018-03-11T23:42:04",
+          "last_delivery": "2018-05-09T23:08:44",
+          "last_label_available": "2018-05-10T23:08:44"
+        }
+      }
+    },
+    {
+      "fold_id": "20180312T000000",
+      "train_start": "2017-07-01T00:00:00",
+      "train_end": "2017-12-28T00:00:00",
+      "calibration_start": "2018-01-04T00:00:00",
+      "calibration_end": "2018-03-05T00:00:00",
+      "evaluation_start": "2018-03-12T00:00:00",
+      "evaluation_end": "2018-04-11T00:00:00",
+      "outcome_observation_cutoff": "2018-06-10T00:00:00",
+      "audits": {
+        "train": {
+          "purchase_cohort": 30038,
+          "eligible": 20372,
+          "excluded": 9666,
+          "unlabeled": 986,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 3074,
+          "promise_not_mature": 5606,
+          "positives": 990,
+          "negatives": 19382,
+          "first_eligible_purchase": "2017-07-01T00:04:15",
+          "last_eligible_purchase": "2017-11-29T18:13:39",
+          "last_delivery": "2017-12-26T23:58:47",
+          "last_label_available": "2017-12-27T23:58:47"
+        },
+        "calibration": {
+          "purchase_cohort": 14487,
+          "eligible": 4270,
+          "excluded": 10217,
+          "unlabeled": 391,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 4002,
+          "promise_not_mature": 5824,
+          "positives": 211,
+          "negatives": 4059,
+          "first_eligible_purchase": "2018-01-04T00:02:25",
+          "last_eligible_purchase": "2018-01-31T23:37:38",
+          "last_delivery": "2018-03-03T19:29:11",
+          "last_label_available": "2018-03-04T19:29:11"
+        },
+        "evaluation": {
+          "purchase_cohort": 6826,
+          "eligible": 6630,
+          "excluded": 196,
+          "unlabeled": 182,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 9,
+          "promise_not_mature": 5,
+          "positives": 924,
+          "negatives": 5706,
+          "first_eligible_purchase": "2018-03-12T00:06:05",
+          "last_eligible_purchase": "2018-04-10T23:51:54",
+          "last_delivery": "2018-06-08T23:18:30",
+          "last_label_available": "2018-06-09T23:18:30"
+        }
+      }
+    },
+    {
+      "fold_id": "20180411T000000",
+      "train_start": "2017-07-31T00:00:00",
+      "train_end": "2018-01-27T00:00:00",
+      "calibration_start": "2018-02-03T00:00:00",
+      "calibration_end": "2018-04-04T00:00:00",
+      "evaluation_start": "2018-04-11T00:00:00",
+      "evaluation_end": "2018-05-11T00:00:00",
+      "outcome_observation_cutoff": "2018-07-10T00:00:00",
+      "audits": {
+        "train": {
+          "purchase_cohort": 32812,
+          "eligible": 23567,
+          "excluded": 9245,
+          "unlabeled": 1018,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 3373,
+          "promise_not_mature": 4854,
+          "positives": 1940,
+          "negatives": 21627,
+          "first_eligible_purchase": "2017-07-31T00:26:33",
+          "last_eligible_purchase": "2017-12-22T22:27:44",
+          "last_delivery": "2018-01-25T23:16:50",
+          "last_label_available": "2018-01-26T23:16:50"
+        },
+        "calibration": {
+          "purchase_cohort": 14231,
+          "eligible": 5140,
+          "excluded": 9091,
+          "unlabeled": 389,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 4169,
+          "promise_not_mature": 4533,
+          "positives": 635,
+          "negatives": 4505,
+          "first_eligible_purchase": "2018-02-03T00:01:19",
+          "last_eligible_purchase": "2018-03-08T23:09:28",
+          "last_delivery": "2018-04-02T23:46:35",
+          "last_label_available": "2018-04-03T23:46:35"
+        },
+        "evaluation": {
+          "purchase_cohort": 7544,
+          "eligible": 7381,
+          "excluded": 163,
+          "unlabeled": 155,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 5,
+          "promise_not_mature": 3,
+          "positives": 348,
+          "negatives": 7033,
+          "first_eligible_purchase": "2018-04-11T00:03:20",
+          "last_eligible_purchase": "2018-05-10T23:46:41",
+          "last_delivery": "2018-07-06T17:16:53",
+          "last_label_available": "2018-07-07T17:16:53"
+        }
+      }
+    },
+    {
+      "fold_id": "20180511T000000",
+      "train_start": "2017-08-30T00:00:00",
+      "train_end": "2018-02-26T00:00:00",
+      "calibration_start": "2018-03-05T00:00:00",
+      "calibration_end": "2018-05-04T00:00:00",
+      "evaluation_start": "2018-05-11T00:00:00",
+      "evaluation_end": "2018-06-10T00:00:00",
+      "outcome_observation_cutoff": "2018-08-09T00:00:00",
+      "audits": {
+        "train": {
+          "purchase_cohort": 35550,
+          "eligible": 25259,
+          "excluded": 10291,
+          "unlabeled": 1067,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 3761,
+          "promise_not_mature": 5463,
+          "positives": 2084,
+          "negatives": 23175,
+          "first_eligible_purchase": "2017-08-30T00:02:39",
+          "last_eligible_purchase": "2018-01-26T22:21:10",
+          "last_delivery": "2018-02-24T15:04:49",
+          "last_label_available": "2018-02-25T15:04:49"
+        },
+        "calibration": {
+          "purchase_cohort": 14014,
+          "eligible": 5501,
+          "excluded": 8513,
+          "unlabeled": 337,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 3194,
+          "promise_not_mature": 4982,
+          "positives": 1044,
+          "negatives": 4457,
+          "first_eligible_purchase": "2018-03-05T00:23:16",
+          "last_eligible_purchase": "2018-04-09T22:33:14",
+          "last_delivery": "2018-05-02T23:04:10",
+          "last_label_available": "2018-05-03T23:04:10"
+        },
+        "evaluation": {
+          "purchase_cohort": 5780,
+          "eligible": 5604,
+          "excluded": 176,
+          "unlabeled": 79,
+          "invalid_labeled_timestamps_or_target": 0,
+          "outcome_not_observable": 4,
+          "promise_not_mature": 93,
+          "positives": 410,
+          "negatives": 5194,
+          "first_eligible_purchase": "2018-05-11T00:09:19",
+          "last_eligible_purchase": "2018-06-09T23:27:47",
+          "last_delivery": "2018-08-01T20:48:33",
+          "last_label_available": "2018-08-02T20:48:33"
+        }
+      }
+    }
+  ]
+}

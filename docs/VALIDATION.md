@@ -3,6 +3,37 @@
 This section preserves the original ingestion baseline. Current end-to-end results are in
 [RESULTS.md](RESULTS.md) and [the aggregate experiment](results/experiment.json).
 
+## Temporal robustness sprint — 24 October 2026
+
+- **114 automated tests passed**, preserving the preceding 97. Lint, formatting
+  and diff checks passed; only the existing Starlette/httpx warning remains.
+- Default rolling evaluation completed 12 valid windows and 57 policy/window
+  comparisons on 66,575 distinct evaluation orders. Two windows were excluded
+  transparently; no fitting failures occurred. Every purchase at/after the
+  protected 2018-06-20 boundary was removed before history construction.
+- A second full real-data run exactly reproduced all metric dictionaries,
+  membership hashes and feature-drift profiles. The new disjoint maturity
+  accounting reconciles every exclusion. [Reproduction evidence and matched
+  calibration comparisons](results/temporal-analysis-20261024.json) preserve the
+  original report hash and both code revisions.
+- Tests enforce chronology, half-open boundaries, zero/positive embargo,
+  strict observation/maturity cutoffs, future-outcome exclusion, placement
+  prediction timestamps, protected history filtering, class/sample support,
+  calibrator isolation, threshold independence from evaluation labels,
+  deterministic inference metrics, advisory consistency gates, matched-window
+  comparisons, invalid configuration, no supported folds, and fitting failures.
+- `uv run --offline fulfilliq evaluate-temporal --help` passed with the existing
+  dependency cache. Real Olist API checks through FastAPI's in-process client
+  confirmed 13 routes, original v1 artifact loading, single/batch prediction
+  equality and capacity queues. No new API route or dependency was added.
+- No policy passed every historical consistency gate, and no promotion occurred.
+  The actual active version remains `20261024T031015-f87ea646`. The old test
+  cohort and existing experimental reports were preserved. This is exploratory
+  historical backtesting, not independent current-production confirmation.
+
+Full methodology, per-window results, drift findings and limitations are in
+[TEMPORAL_VALIDATION.md](TEMPORAL_VALIDATION.md).
+
 ## Delivery-risk sprint verification — 24 October 2026
 
 - **97 automated tests passed** after the risk sprint (the original 69 remain).
