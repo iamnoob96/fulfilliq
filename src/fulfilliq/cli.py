@@ -102,6 +102,12 @@ def main(argv: list[str] | None = None) -> int:
     report.add_argument("--output", type=Path, default=Path("docs/results/experiment.json"))
     report.add_argument("--data-dir", type=Path, default=settings.data_dir)
     report.add_argument("--artifact-dir", type=Path, default=settings.artifact_dir)
+    r_export = commands.add_parser("export-r", help="Export deterministic warehouse inputs for optional R analysis")
+    r_export.add_argument("--output", type=Path, default=settings.processed_dir / "r_inputs")
+    r_export.add_argument("--sample-size", type=int, default=5000)
+    r_verify = commands.add_parser("verify-r", help="Verify Python/R rule agreement and publish completed outputs")
+    r_verify.add_argument("--inputs", type=Path, default=settings.processed_dir / "r_inputs")
+    r_verify.add_argument("--output", type=Path, default=settings.artifact_dir / "r_analysis")
     args = parser.parse_args(argv)
     configure_logging()
     try:
@@ -227,6 +233,14 @@ def main(argv: list[str] | None = None) -> int:
                 anomaly_min_orders=args.anomaly_min_orders,
             )
             print(json.dumps(result, indent=2, allow_nan=False))
+        elif args.command == "export-r":
+            from fulfilliq.analytics.r_export import export_r_inputs
+
+            print(json.dumps(export_r_inputs(settings, args.output, sample_size=args.sample_size), indent=2))
+        elif args.command == "verify-r":
+            from fulfilliq.analytics.r_export import verify_r_outputs
+
+            print(json.dumps(verify_r_outputs(settings, args.inputs, args.output), indent=2))
         elif args.command == "export-report":
             from fulfilliq.analytics.reporting import export_experiment
 

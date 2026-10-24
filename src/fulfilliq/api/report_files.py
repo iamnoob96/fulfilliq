@@ -5,6 +5,7 @@ import json
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
+from sqlalchemy.exc import SQLAlchemyError
 
 from fulfilliq.config import Settings
 from fulfilliq.modeling.training import dataset_identity
@@ -31,7 +32,7 @@ def report_files_router(settings: Settings):
                 raise ValueError("R inputs differ from the current warehouse; regenerate outputs")
             return {"available": True, "message": "Completed optional R analysis", "summary": summary,
                     "files": sorted(name for name in R_FILES if (folder / name).is_file())}
-        except (OSError, ValueError, KeyError) as exc:
+        except (OSError, ValueError, KeyError, SQLAlchemyError) as exc:
             return {"available": False, "message": "Optional R outputs unavailable. Run the export, "
                     "R analysis and verification commands in r_analysis/README.md. " + str(exc),
                     "summary": {}, "files": []}
