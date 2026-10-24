@@ -1,10 +1,15 @@
 """Contracts for historical browsing, replay and human decisions."""
 
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from fulfilliq.api.intelligence_schemas import Page
 from fulfilliq.modeling.contracts import OrderRequest, RiskResponse
 from fulfilliq.operations.reviews import ReviewState
+
+OrderStatus = Literal["created", "approved", "invoiced", "processing", "shipped", "delivered", "unavailable", "canceled"]
+DeliveryOutcome = Literal["late", "on_time", "unavailable"]
 
 
 class FilterOptions(BaseModel):
@@ -13,6 +18,9 @@ class FilterOptions(BaseModel):
     regions: list[str]
     categories: list[str]
     seller_ids: list[str]
+    order_statuses: list[str] = Field(default_factory=list)
+    warehouse_snapshot: str = ""
+    model_version: str | None = None
 
 
 class HistoricalOrder(BaseModel):
@@ -23,6 +31,8 @@ class HistoricalOrder(BaseModel):
     items_value: float | None
     freight_value: float | None
     review_status: str
+    order_status: str
+    delivery_outcome: DeliveryOutcome
 
 
 class Placement(BaseModel):
@@ -94,6 +104,13 @@ class ReplayResponse(BaseModel):
     review_order_ids: list[str]
     unavailable: list[ReplayUnavailable]
     interpretation: str
+    scored_at_utc: str
+    model_version: str | None
+    warehouse_snapshot: str
+    candidate_count: int
+    scored_count: int
 
 
-HistoricalOrderPage = Page[HistoricalOrder]
+class HistoricalOrderPage(Page[HistoricalOrder]):
+    review_counts: dict[str, int]
+    cohort_total: int

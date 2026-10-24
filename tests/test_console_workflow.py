@@ -130,3 +130,26 @@ def test_active_seller_counts_follow_item_filters(application):
     assert client.get("/api/v1/analytics/overview", params={"seller_id": "s1"}).json()["active_sellers"] == 1
     assert client.get("/api/v1/analytics/overview", params={"product_category": "books"}).json()["active_sellers"] == 1
     assert client.get("/api/v1/analytics/overview", params={"region": "ZZ"}).json()["active_sellers"] == 0
+
+
+def test_discovery_outcomes_statuses_counts_and_pagination(application):
+    _, client = application
+    assert client.get("/api/v1/orders", params={"order_status": "canceled"}).json()["items"][0]["order_id"] == "o3"
+    assert client.get("/api/v1/orders", params={"delivery_outcome": "late"}).json()["total"] == 2
+    assert client.get("/api/v1/orders", params={"delivery_outcome": "on_time"}).json()["total"] == 0
+    assert client.get("/api/v1/orders", params={"delivery_outcome": "unavailable"}).json()["total"] == 4
+    first = client.get("/api/v1/orders", params={"limit": 2}).json()
+    second = client.get("/api/v1/orders", params={"limit": 2, "offset": 2}).json()
+    assert not ({r["order_id"] for r in first["items"]} & {r["order_id"] for r in second["items"]})
+    assert first["review_counts"]["pending"] == first["cohort_total"] == 6
+    client.put("/api/v1/orders/o1/review", json={"status": "resolved", "notes": "Synthetic test", "expected_revision": 0},
+               headers={"Authorization": "Bearer test-token"})
+    result = client.get("/api/v1/orders", params={"review_status": "pending", "order_ids": ["o1", "o2"]}).json()
+    assert result["total"] == 1 and result["cohort_total"] == 2
+    assert result["review_counts"]["resolved"] == 1
+    assert [r["order_id"] for r in result["items"]] == ["o2"]
+    assert client.get("/api/v1/orders", params={"order_status": "fictional"}).status_code == 422
+    assert client.get("/api/v1/orders", params={"delivery_outcome": "predicted"}).status_code == 422
+    assert client.get("/api/v1/orders", params={"order_ids": ["o1"] * 101}).status_code == 422
+    options = client.get("/api/v1/console/options").json()
+    assert "canceled" in options["order_statuses"] and options["warehouse_snapshot"]

@@ -21,6 +21,10 @@ class OrderService:
         self.reviews = reviews
         self.operations = OperationsService(database_path)
 
+    def snapshot(self) -> str:
+        stat = self.database_path.stat()
+        return f"{stat.st_mtime_ns}:{stat.st_size}"
+
     def query(self, sql: str, **params) -> list[dict]:
         engine = make_engine(self.database_path, readonly=True)
         try:
@@ -38,25 +42,41 @@ class OrderService:
             "regions": sorted(orders.region.dropna().unique()),
             "categories": sorted(self.operations.memberships.product_category.unique()),
             "seller_ids": sorted(self.operations.memberships.seller_id.unique()),
+            "order_statuses": sorted(orders.order_status.unique()),
+            "warehouse_snapshot": self.snapshot(),
         }
 
-    def list(self, filters: CohortFilter, status: str | None, limit: int, offset: int) -> dict:
+    def list(self, filters: CohortFilter, status: str | None, limit: int, offset: int,
+             *, order_status: str | None = None, delivery_outcome: str | None = None,
+             order_ids: list[str] | None = None) -> dict:
         frame = self.operations.cohort(filters)
+        if order_status:
+            frame = frame.loc[frame.order_status.eq(order_status)]
+        frame["delivery_outcome"] = "unavailable"
+        frame.loc[frame.eligible & frame.late.eq(True), "delivery_outcome"] = "late"  # noqa: E712
+        frame.loc[frame.eligible & frame.late.eq(False), "delivery_outcome"] = "on_time"  # noqa: E712
+        if delivery_outcome:
+            frame = frame.loc[frame.delivery_outcome.eq(delivery_outcome)]
+        if order_ids is not None:
+            frame = frame.loc[frame.order_id.isin(order_ids)]
         states = self.reviews.statuses()
         frame["review_status"] = frame.order_id.map(
             lambda value: states.get(value, {}).get("status", "pending")
         )
+        counts = {state: int(frame.review_status.eq(state).sum()) for state in
+                  ("pending", "investigating", "reviewed", "escalated", "resolved")}
         if status:
             frame = frame.loc[frame.review_status.eq(status)]
         frame = frame.sort_values(["purchased_at", "order_id"], ascending=[False, True])
         columns = ["order_id", "purchased_at", "estimated_delivery_at", "region",
-                   "items_value", "freight_value", "review_status"]
-        # Historical outcome/status deliberately excluded from the replay candidate table.
+                   "items_value", "freight_value", "review_status", "order_status", "delivery_outcome"]
+        # Outcomes are browsing context only; detail() independently reconstructs checkout inputs.
         rows = frame.iloc[offset:offset + limit][columns].copy()
         for column in ("purchased_at", "estimated_delivery_at"):
             rows[column] = rows[column].map(lambda v: v.isoformat() if v is not None and str(v) != "NaT" else None)
         return {"total": len(frame), "limit": limit, "offset": offset,
-                "items": numeric_json(rows.to_dict("records"))}
+                "items": numeric_json(rows.to_dict("records")),
+                "review_counts": counts, "cohort_total": sum(counts.values())}
 
     def detail(self, order_id: str) -> dict:
         # Placement query does not select final status, delivery milestones or reviews.
