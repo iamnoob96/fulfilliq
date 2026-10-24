@@ -30,7 +30,9 @@ Transformations performed: exact duplicate removal, typed timestamp/numeric coer
 reported invalid/missing values, geographic means, dimensional copies, safe child-table
 aggregation and descriptive historical metrics. Raw files are never edited.
 The source review text is primarily Portuguese and remains unmodified apart from empty
-field normalization. No translation, sentiment model or complaint classifier is provided.
+field normalization. Separate Portuguese TF-IDF/sentiment analysis and interpretable
+lexical themes are documented in `MINING_AND_NLP.md`; no translation API or verified
+logistics complaint classifier is claimed.
 
 Raw data, download manifests, generated databases/reports and model files are excluded
 from version control. Do not redistribute original or derived data without retaining

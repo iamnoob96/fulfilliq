@@ -1,1 +1,1 @@
-"""HTTP interface. Only Phase 1 health/readiness is exposed."""
+"""Typed HTTP interface for health, risk scoring and historical intelligence."""

@@ -3,6 +3,44 @@
 This section preserves the original ingestion baseline. Current end-to-end results are in
 [RESULTS.md](RESULTS.md) and [the aggregate experiment](results/experiment.json).
 
+## Complete backend verification — 24 October 2026
+
+- **69 automated tests passed** in the working project and a fresh GitHub clone.
+  The original 27 regression cases remain; the original OpenAPI assertion was broadened
+  from a health-only route set to health inclusion because the requested API is additive.
+- Local lint, formatting, compilation, source grain, monetary reconciliation, SQLite
+  integrity and foreign-key checks passed. Original ingestion remains unchanged.
+- A real Uvicorn server using actual Olist artifacts passed all public API routes,
+  Swagger/OpenAPI, repeatable prediction, single/batch equality, filter validation and
+  unknown-seller checks. The same live checks passed in the clean clone. Both temporary
+  verification servers were shut down afterward.
+- The clean clone installed its own virtual environment from `uv.lock` using cached
+  dependency wheels, downloaded all nine original CSVs from the public mirror again,
+  ingested, verified, trained all three candidates, generated every mining/NLP report,
+  and exported its experiment. Every source SHA-256, numeric metric, analytical profile,
+  anomaly count and review result matched the original experiment **exactly**; UUIDs,
+  timestamps and wall-clock runtimes were excluded. The serialized delivery model's
+  SHA-256 also matched. [Reproduction evidence](results/reproduction.json) records the
+  tested revision; later changes only clarify documentation/module descriptions.
+- Missing/stale models, changed input hashes, checksum damage, malformed report shapes,
+  incoherent dates, unsupported timestamp ranges, prohibited outcome inputs, pagination,
+  cold starts, multiple sellers/items/reviews and calibrated temporal boundaries are tested.
+- One non-failing Starlette/httpx test-client deprecation warning remains. No tests or
+  required checks are currently failing. This is not evidence of contemporary production
+  validity; the model and mining limitations are documented in `RESULTS.md`.
+
+Only reviewed source, examples and small aggregate experiment JSON are tracked. A tracked
+file audit found no files above 1 MB, raw CSVs, databases, model binaries, secrets or GitHub
+Actions workflows. Baseline and coherent feature changes were committed and pushed
+separately using Conventional Commits.
+
+The repository creation command requested private visibility. A final audit nevertheless
+found public visibility; it was changed to **private** and verified through both GitHub
+REST and GraphQL. No raw data, models or credentials were committed. Earlier public access
+cannot be retroactively ruled out. The repository is private at final verification.
+
+## Original Phase 1 baseline
+
 Verified on **24 October 2026**, using Python 3.11.3 on macOS / Apple Silicon (arm64). The tested dependency
 versions are recorded in `uv.lock`. These are observed local results, not model results.
 

@@ -173,7 +173,7 @@ Validation selected **calibrated histogram gradient boosting**. Its later test p
 contains **14,551 orders**: ROC-AUC **0.6483**, average precision **0.0977**, precision
 **0.1025**, recall **0.1735**, F1 **0.1289**, Brier **0.0684**, and top-decile precision
 **0.1030** (test prevalence **0.0658**). The prevalence baseline has better Brier error
-(**0.0616**). Candidate rankings reversed on test, demonstrating temporal instability;
+(**0.0615**). Candidate rankings reversed on test, demonstrating temporal instability;
 the executable selection rule still uses validation only.
 
 Other findings: one supported SP-seller/RJ-customer delay rule (lift **1.917**); two

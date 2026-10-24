@@ -2,6 +2,22 @@
 
 The local Python package has a small batch interface and a separate HTTP interface:
 
+```mermaid
+flowchart TD
+    CSV[Original Olist CSVs] --> ETL[Validation and ETL]
+    ETL --> DB[SQLite sources and order mart]
+    DB --> F[Purchase-time features and observable histories]
+    F --> ML[Chronological training and calibration]
+    F --> M[Patterns, medoids and anomaly screens]
+    DB --> N[Portuguese review analysis]
+    DB --> A[Filtered fulfillment analytics]
+    ML --> P[Persisted models and metrics]
+    M --> P
+    N --> P
+    P --> API[FastAPI and Swagger]
+    A --> API
+```
+
 ```text
 original raw CSVs
     -> header/field/key validation + cleaning

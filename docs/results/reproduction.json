@@ -1,0 +1,17 @@
+{
+  "verified_revision": "10c78410372e0203d308387c19e6e20fecb188b0",
+  "environment": "Fresh temporary GitHub clone; CPython 3.11.3; uv locked dependencies; macOS arm64",
+  "tests_passed": 69,
+  "lint": "passed",
+  "fresh_public_download": "all nine CSVs; hashes match",
+  "ingestion_and_integrity": "passed",
+  "model_selection_and_metrics": "reproduced within 1e-10",
+  "all_insight_results": "reproduced within 1e-10; timings excluded",
+  "max_absolute_numeric_difference": 0.0,
+  "model_binary_sha256_matches": true,
+  "stochastic_seed": 42,
+  "known_test_warning": "Starlette httpx test client deprecation",
+  "live_api_smoke": "passed for all routes, repeatability, batch parity and expected failures",
+  "example_probability_matches_original": true,
+  "repository_visibility": "private; verified through GitHub REST and GraphQL"
+}
