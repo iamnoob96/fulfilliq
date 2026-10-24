@@ -13,13 +13,15 @@ from uuid import uuid4
 
 import joblib
 import numpy as np
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
+from sklearn.frozen import FrozenEstimator
 from sklearn.impute import SimpleImputer
 from sklearn.inspection import permutation_importance
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.preprocessing import FunctionTransformer, OneHotEncoder, StandardScaler
 from sqlalchemy import text
 from threadpoolctl import threadpool_limits
 
@@ -35,7 +37,7 @@ from fulfilliq.features.orders import (
 from fulfilliq.ingestion.download import write_json
 from fulfilliq.ingestion.validation import sha256_file
 from fulfilliq.modeling.evaluation import choose_threshold, evaluate
-from fulfilliq.modeling.temporal import chronological_split
+from fulfilliq.modeling.temporal import calibration_partition, chronological_split
 
 logger = logging.getLogger(__name__)
 SEED = 42
@@ -48,6 +50,7 @@ def preprocessing() -> ColumnTransformer:
                 "numeric",
                 Pipeline(
                     [
+                        ("log", FunctionTransformer(np.log1p, feature_names_out="one-to-one")),
                         (
                             "impute",
                             SimpleImputer(
@@ -138,7 +141,10 @@ def train_delivery_model(
         frame[category] = frame[category].fillna("unknown")
         for subset in (split.train, split.validation, split.test):
             subset[category] = subset[category].fillna("unknown")
-    x_train, y_train = split.train[FEATURES], split.train.target_is_late.astype(int)
+    base_train, calibration, calibration_boundary = calibration_partition(
+        split.train, maturity_days=maturity_days
+    )
+    x_train, y_train = base_train[FEATURES], base_train.target_is_late.astype(int)
     x_val, y_val = split.validation[FEATURES], split.validation.target_is_late.astype(int)
     x_test, y_test = split.test[FEATURES], split.test.target_is_late.astype(int)
     fitted, comparisons = {}, {}
@@ -147,6 +153,9 @@ def train_delivery_model(
             start = perf_counter()
             pipeline = Pipeline([("preprocess", preprocessing()), ("classifier", estimator)])
             pipeline.fit(x_train, y_train)
+            calibrated = CalibratedClassifierCV(FrozenEstimator(pipeline), method="sigmoid")
+            calibrated.fit(calibration[FEATURES], calibration.target_is_late.astype(int))
+            pipeline = calibrated
             val_probabilities = pipeline.predict_proba(x_val)[:, 1]
             threshold = choose_threshold(y_val, val_probabilities)
             comparisons[name] = {
@@ -206,6 +215,13 @@ def train_delivery_model(
         "history_lag_days": lag_days,
         "history_window_days": window_days,
         "split": split.metadata,
+        "calibration": {
+            "method": "sigmoid on latest quarter of training, not validation/test",
+            "start": calibration_boundary.isoformat(),
+            "base_train_count": len(base_train),
+            "calibration_count": len(calibration),
+            "base_last_label_available": base_train.label_available_at.max().isoformat(),
+        },
         "comparison": comparisons,
         "baselines": baselines,
         "feature_importance": sorted(

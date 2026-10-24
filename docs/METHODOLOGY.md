@@ -35,6 +35,39 @@ are excluded. Cold-start counts are zero and rates/durations are missing. No glo
 future-informed prior is substituted. The API uses the same indexed prefix-sum histories
 and exactly the same numeric/categorical transformations as offline training.
 
+## Chronological training, calibration and evaluation
+
+Purchase timestamps define 70% / 15% / 15% train, validation and test periods. Boundaries
+are based on all purchase timestamps, not class labels. An eligible record is retained
+only if its delivery-plus-reporting-lag and estimated-delivery-plus-maturity-buffer are
+strictly before the next boundary. The default maturity buffer is 14 days. For test,
+the observation cutoff defaults to the last purchase in the snapshot; this is a conservative
+assumed cutoff, not a known extraction timestamp. Counts of unlabeled and purged orders
+are recorded in model metadata.
+
+The latest quarter of the retained training period is reserved for sigmoid probability
+calibration. Base-model training is additionally purged at that calibration boundary.
+Imputation, log1p transforms for nonnegative skewed numeric inputs, scaling, category
+vocabulary and classifiers are fitted only on base-training data. Calibration uses a
+frozen estimator and the reserved training subset. The full validation period remains
+available for choosing the candidate with highest average precision and its maximum-F1
+threshold. Ties prefer the higher threshold. Test data are never fitted, used for
+thresholds, or used by the executable candidate-selection rule. No random CV or random
+train/test split is used. History may update with outcomes observed before each prediction;
+that models an online feature store without retraining the estimator.
+
+Comparisons include Logistic Regression, Random Forest and histogram gradient boosting,
+plus training-prevalence and seller-history baselines. All report precision, recall, F1,
+ROC-AUC, average precision (the reported PR-AUC convention), Brier score, calibration bins,
+confusion matrices and precision in a deterministic top-risk decile. Permutation importance
+uses a validation sample, not the test set. Exact software versions, source hashes, seed,
+threshold, feature schema and split boundaries accompany the trusted local joblib artifact.
+
+This is an exploratory course experiment: an initial uncalibrated implementation's test
+diagnostics were inspected during engineering and motivated adding calibration. The final
+reproducible split is chronologically held out from fitting and selection, but is not a
+pristine blind external benchmark. A new forward dataset is needed for confirmatory claims.
+
 The original database contains a static snapshot of seller/product attributes and promised
 dates; it cannot prove those attributes never changed after checkout. The offline simulation
 assumes their recorded values were available when the order was placed. Coordinates are

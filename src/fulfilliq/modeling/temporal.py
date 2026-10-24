@@ -13,6 +13,22 @@ class TemporalSplit:
     metadata: dict
 
 
+def calibration_partition(train: pd.DataFrame, *, maturity_days: int = 14):
+    """Reserve the latest quarter of training for calibration; purge earlier labels."""
+    train = train.sort_values("purchased_at", kind="stable")
+    boundary = train.purchased_at.iloc[int(len(train) * 0.75)]
+    base = train.loc[
+        train.purchased_at.lt(boundary)
+        & train.label_available_at.lt(boundary)
+        & (train.estimated_at + pd.Timedelta(days=maturity_days)).lt(boundary)
+    ]
+    calibration = train.loc[train.purchased_at.ge(boundary)]
+    for name, subset in (("base training", base), ("calibration", calibration)):
+        if len(subset) < 5 or subset.target_is_late.astype(int).nunique() != 2:
+            raise ValueError(f"{name} needs at least five mature orders and both classes")
+    return base, calibration, boundary
+
+
 def chronological_split(
     frame: pd.DataFrame,
     *,

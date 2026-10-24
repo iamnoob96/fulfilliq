@@ -15,7 +15,7 @@ from fulfilliq.ingestion.pipeline import ingest
 from fulfilliq.modeling.contracts import BatchRequest, OrderRequest
 from fulfilliq.modeling.evaluation import choose_threshold, evaluate
 from fulfilliq.modeling.inference import ModelUnavailable, RiskService, request_features
-from fulfilliq.modeling.temporal import chronological_split
+from fulfilliq.modeling.temporal import calibration_partition, chronological_split
 from fulfilliq.modeling.training import train_delivery_model
 
 
@@ -71,6 +71,10 @@ def test_purged_splits_and_future_labels(training_frame):
     assert split.validation.label_available_at.max() < pd.Timestamp(split.metadata["test_start"])
     assert split.test.label_available_at.max() < pd.Timestamp(split.metadata["observation_cutoff"])
     assert not set(split.train.index) & set(split.test.index)
+    base, calibration, boundary = calibration_partition(split.train, maturity_days=2)
+    assert base.label_available_at.max() < boundary
+    assert calibration.purchased_at.min() >= boundary
+    assert not set(base.index) & set(calibration.index)
     changed = training_frame.copy()
     changed.loc[split.train.index[0], "label_available_at"] = pd.Timestamp("2030-01-01")
     assert split.train.index[0] not in chronological_split(changed, maturity_days=2).train.index
