@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
+from sklearn import config_context
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.frozen import FrozenEstimator
 
@@ -103,8 +104,15 @@ def calibrate_predictions(
         if policy.name == "raw":
             values_cal, values_eval = raw_cal, pipeline.predict_proba(evaluation_features)[:, 1]
         else:
-            calibrated = CalibratedClassifierCV(FrozenEstimator(pipeline), method="sigmoid")
-            calibrated.fit(x_cal.loc[selected], y_cal.loc[selected], sample_weight=subset_weights)
+            indices = np.arange(int(selected.sum()))
+            # The estimator is frozen: one partition avoids redundant random CV fits.
+            calibrated = CalibratedClassifierCV(
+                FrozenEstimator(pipeline), method="sigmoid", cv=[(indices, indices)]
+            )
+            with config_context(enable_metadata_routing=True):
+                calibrated.fit(
+                    x_cal.loc[selected], y_cal.loc[selected], sample_weight=subset_weights
+                )
             values_cal = calibrated.predict_proba(x_cal)[:, 1]
             values_eval = calibrated.predict_proba(evaluation_features)[:, 1]
         predictions[policy.name] = {

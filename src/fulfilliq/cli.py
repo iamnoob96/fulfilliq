@@ -61,6 +61,19 @@ def main(argv: list[str] | None = None) -> int:
 
     for name, default in vars(RollingConfig()).items():
         temporal.add_argument("--" + name.replace("_", "-"), type=int, default=default)
+    adaptive = commands.add_parser(
+        "evaluate-adaptive-calibration",
+        help="Run nested historical recency-calibration selection without promotion",
+    )
+    adaptive.add_argument("--db-path", type=Path, default=settings.database_path)
+    adaptive.add_argument("--artifact-dir", type=Path, default=settings.artifact_dir)
+    adaptive.add_argument("--output", type=Path)
+    for name, default in vars(RollingConfig()).items():
+        adaptive.add_argument("--" + name.replace("_", "-"), type=int, default=default)
+    adaptive.add_argument("--half-lives", type=int, nargs="*", default=[30, 60, 90, 180])
+    adaptive.add_argument("--observation-windows", type=int, nargs="*", default=[30, 60])
+    adaptive.add_argument("--min-inner-folds", type=int, default=3)
+    adaptive.add_argument("--max-inner-folds", type=int, default=3)
     score = commands.add_parser("score", help="Score an order JSON file using the persisted model")
     score.add_argument("--input", type=Path, required=True)
     score.add_argument("--db-path", type=Path, default=settings.database_path)
@@ -160,6 +173,29 @@ def main(argv: list[str] | None = None) -> int:
                 + ".json"
             )
             report = run_temporal_evaluation(args.db_path, args.artifact_dir, output, config)
+            print(output.with_suffix(".md").read_text())
+            print(f"Structured report: {output}")
+            return 0 if report["status"] == "complete" else 1
+        elif args.command == "evaluate-adaptive-calibration":
+            from fulfilliq.modeling.adaptive_evaluation import run_adaptive_evaluation
+
+            config = RollingConfig(**{name: getattr(args, name) for name in vars(RollingConfig())})
+            output = args.output or args.artifact_dir / "adaptive" / (
+                datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
+                + "-"
+                + uuid4().hex[:8]
+                + ".json"
+            )
+            report = run_adaptive_evaluation(
+                args.db_path,
+                args.artifact_dir,
+                output,
+                config,
+                half_lives=tuple(args.half_lives),
+                windows=tuple(args.observation_windows),
+                min_inner_folds=args.min_inner_folds,
+                max_inner_folds=args.max_inner_folds,
+            )
             print(output.with_suffix(".md").read_text())
             print(f"Structured report: {output}")
             return 0 if report["status"] == "complete" else 1

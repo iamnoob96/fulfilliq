@@ -30,12 +30,18 @@ qualifies, use **raw fallback**, explicitly not a passing/adaptive improvement.
 Outer results cannot affect this decision. The selected policy is evaluated
 once on the later outer cohort, alongside fixed raw/sigmoid and prevalence
 references; unselected adaptive policies receive no outer evaluation metrics.
+If a selected configuration has insufficient effective calibration support at
+the outer fit time, use an explicitly reported raw feasibility fallback instead
+of dropping that outer evaluation population.
 
 Base estimators and candidate probabilities may be cached by historical origin:
 their training/calibration labels and features are fixed at that origin's fit
 clocks. Inner evaluation membership and metrics are always re-filtered for the
 current outer cutoff. Histories retain strict availability before prediction.
 Thresholds are tuned only on the designated historical calibration cohort.
+Calibration uses public scikit-learn metadata routing for sample weights. A
+single prediction partition is safe because the underlying estimator is frozen;
+it avoids redundant random cross-validation and never refits the base learner.
 
 ## Outcome observation and sensitivity
 
