@@ -1,5 +1,14 @@
 # Real Olist experimental results
 
+The subsequent [nested recency-adaptive study](ADAPTIVE_CALIBRATION.md) evaluated
+eight outer windows with 24 mature inner selections. On matched outer windows,
+mean Brier was 0.08992 raw, 0.09163 fixed sigmoid and 0.09027 nested selection.
+No procedure passed every consistency gate, and no promotion occurred. These
+eight-window means must not be compared directly with earlier twelve-window
+means. [Compact results](results/adaptive-20261024-summary.json) and
+[determinism evidence](results/adaptive-20261024-reproduction.json) retain the
+original measured provenance.
+
 The later [rolling-origin calibration study](TEMPORAL_VALIDATION.md) preserves
 the benchmarks below and excludes the inspected test cohort. It evaluated 12
 historical windows (66,575 orders): no calibration policy beat a recent-prevalence

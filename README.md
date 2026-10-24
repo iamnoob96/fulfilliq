@@ -149,6 +149,19 @@ produced 12 valid windows and 66,575 evaluation orders: **no calibration policy
 passed every consistency gate**, so no new model was promoted. See
 [temporal methodology, measured results and limitations](docs/TEMPORAL_VALIDATION.md).
 
+Nested calibration policy selection is available separately:
+
+```sh
+uv run fulfilliq evaluate-adaptive-calibration
+```
+
+This chooses fixed, recency-weighted or recent-observation sigmoid policies from
+mature historical inner windows before scoring each outer window. It produces
+versioned full/compact JSON and Markdown reports, with censoring and maturity
+sensitivity. The measured eight-window study found **no consistently passing
+adaptive improvement**; the active model remains unchanged. See
+[adaptive methodology, results and reproduction](docs/ADAPTIVE_CALIBRATION.md).
+
 The dataset is about 126 MB of CSVs. Allow a few GB of disk and roughly 1–2 GB RAM for a
 full workflow; CPU parallelism is bounded. Training and mining take minutes depending on
 hardware. Stop the API during database refreshes. This is a local single-writer workflow.

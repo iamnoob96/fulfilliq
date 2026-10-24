@@ -3,6 +3,44 @@
 This section preserves the original ingestion baseline. Current end-to-end results are in
 [RESULTS.md](RESULTS.md) and [the aggregate experiment](results/experiment.json).
 
+## Nested adaptive calibration sprint — 24 October 2026
+
+- **127 automated tests passed**, preserving the preceding 114. Tests cover
+  outcome-observation recency weights, effective sample sizes, strict maturity,
+  deadline-versus-observed-label distinction, calibration isolation, outer-label
+  perturbation, deterministic selection, insufficient calibration support,
+  raw feasibility fallback without dropping outer populations, protected
+  boundaries, censoring sensitivity and v1 artifact/report compatibility.
+- The real nested run completed eight outer windows and 24 inner selections
+  (10 distinct inner origins), with no fitting failures. Four early outer
+  origins lacked sufficient inner history; two original schedule windows were
+  also excluded. Twelve base models and 20 cache hits bounded computation.
+- A full rerun exactly reproduced all eight outer result objects, inner
+  selections, censoring diagnostics and summary metrics. Sixty-four raw/fixed
+  reference metrics matched the preceding rolling experiment to 1e-12.
+  [Reproduction evidence](results/adaptive-20261024-reproduction.json) records
+  both code revisions and report checksums.
+- All 24 actual inner selections and eight selected calibrators were explicitly
+  checked against their strict historical cutoffs. No outer labels were passed
+  into policy selection. No early late-label inference was used. Snapshot
+  cancellation/undelivered categories remain descriptive and never become
+  on-time labels.
+- Full repeated inner tables stay in ignored local artifacts; the committed
+  [compact evidence](results/adaptive-20261024-summary.json) preserves all outer
+  metrics and inner gate diagnostics without raw IDs or model binaries.
+- Lint/format checks and the cached `uv run --offline` CLI help check passed.
+  Real-data checks through FastAPI's in-process client confirmed the original
+  v1 artifact, all 13 documented routes, repeatable single/batch predictions
+  and the capacity review queue. The CLI's unsupported-fold path returns one
+  and still writes its diagnostic reports.
+- No procedure passed every outer consistency gate. The active model remains
+  `20261024T031015-f87ea646`; old reports and the protected test cohort remain
+  unchanged. This is previously inspected historical research, not independent
+  forward-production validation.
+
+See [ADAPTIVE_CALIBRATION.md](ADAPTIVE_CALIBRATION.md) for commands, measured
+comparisons, policy frequencies, censoring sensitivity and limitations.
+
 ## Temporal robustness sprint — 24 October 2026
 
 - **114 automated tests passed**, preserving the preceding 97. Lint, formatting

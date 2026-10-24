@@ -69,7 +69,8 @@ def main(argv: list[str] | None = None) -> int:
     adaptive.add_argument("--artifact-dir", type=Path, default=settings.artifact_dir)
     adaptive.add_argument("--output", type=Path)
     for name, default in vars(RollingConfig()).items():
-        adaptive.add_argument("--" + name.replace("_", "-"), type=int, default=default)
+        if not name.startswith("isotonic_"):
+            adaptive.add_argument("--" + name.replace("_", "-"), type=int, default=default)
     adaptive.add_argument("--half-lives", type=int, nargs="*", default=[30, 60, 90, 180])
     adaptive.add_argument("--observation-windows", type=int, nargs="*", default=[30, 60])
     adaptive.add_argument("--min-inner-folds", type=int, default=3)
@@ -179,7 +180,12 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "evaluate-adaptive-calibration":
             from fulfilliq.modeling.adaptive_evaluation import run_adaptive_evaluation
 
-            config = RollingConfig(**{name: getattr(args, name) for name in vars(RollingConfig())})
+            config = RollingConfig(
+                **{
+                    name: getattr(args, name, default)
+                    for name, default in vars(RollingConfig()).items()
+                }
+            )
             output = args.output or args.artifact_dir / "adaptive" / (
                 datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
                 + "-"

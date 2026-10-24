@@ -1,0 +1,17 @@
+{
+  "original_code_revision": "b8470801b5714c4da6c88d5ec3ffc9d8e3339a45",
+  "reproduction_code_revision": "9a46188c27df55a9e810e0a6e85ceefc9ae72caa",
+  "original_full_report_sha256": "9c85de702856e982d60bfc618a29c2286ed22f2a46e2b82c366633cafd1a5188",
+  "reproduction_full_report_sha256": "48d01adce75387e1d696fd75fe7141866dc1cb5efc35241b6b198772746f5b6e",
+  "outer_folds_exactly_equal": 8,
+  "inner_policy_selection_evaluations_exactly_equal": 24,
+  "summary_and_selected_configurations_exactly_equal": true,
+  "censoring_and_sensitivity_exactly_equal": true,
+  "old_rolling_reference_metric_checks_passed": 64,
+  "old_rolling_reference_tolerance": 1e-12,
+  "active_model_unchanged": true,
+  "base_model_fits_per_run": 12,
+  "prediction_cache_hits_per_run": 20,
+  "first_run_seconds": 53.2341041660402,
+  "reproduction_seconds": 52.63316479092464
+}

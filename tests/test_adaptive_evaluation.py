@@ -165,6 +165,27 @@ def test_nested_real_schema_artifact_and_report_compatibility(tmp_path):
     assert all(row["evaluation_end"] <= report["protected_start"] for row in report["folds"])
     with pytest.raises(ValueError, match="preserved"):
         run_adaptive_evaluation(settings.database_path, settings.artifact_dir, output, config())
+    from fulfilliq.cli import main
+
+    unsupported = tmp_path / "unsupported-cli.json"
+    assert (
+        main(
+            [
+                "evaluate-adaptive-calibration",
+                "--db-path",
+                str(settings.database_path),
+                "--artifact-dir",
+                str(settings.artifact_dir),
+                "--output",
+                str(unsupported),
+                "--min-observations",
+                "100000",
+            ]
+        )
+        == 1
+    )
+    assert json.loads(unsupported.read_text())["status"] == "no_valid_folds"
+    assert pointer.read_bytes() == original
 
 
 def test_outer_support_failure_falls_back_without_dropping_population(training_frame, monkeypatch):
