@@ -2,7 +2,6 @@
 
 import argparse
 import json
-import logging
 from pathlib import Path
 
 from sqlalchemy.exc import SQLAlchemyError
@@ -13,6 +12,7 @@ from fulfilliq.db.connection import make_engine
 from fulfilliq.db.integrity import verify_database
 from fulfilliq.ingestion.download import download_dataset
 from fulfilliq.ingestion.pipeline import ingest
+from fulfilliq.logging_config import configure_logging
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -40,8 +40,25 @@ def main(argv: list[str] | None = None) -> int:
     score.add_argument("--input", type=Path, required=True)
     score.add_argument("--db-path", type=Path, default=settings.database_path)
     score.add_argument("--artifact-dir", type=Path, default=settings.artifact_dir)
+    insights = commands.add_parser(
+        "build-insights", help="Generate persisted historical intelligence"
+    )
+    insights.add_argument(
+        "--module",
+        choices=["all", "operations", "rules", "segments", "anomalies", "reviews"],
+        default="all",
+    )
+    insights.add_argument("--artifact-dir", type=Path, default=settings.artifact_dir)
+    insights.add_argument("--data-dir", type=Path, default=settings.data_dir)
+    insights.add_argument("--min-support", type=float, default=0.01)
+    insights.add_argument("--min-confidence", type=float, default=0.15)
+    insights.add_argument("--min-lift", type=float, default=1.1)
+    insights.add_argument("--max-length", type=int, default=3)
+    insights.add_argument("--min-seller-orders", type=int, default=10)
+    insights.add_argument("--contamination", type=float, default=0.02)
+    insights.add_argument("--anomaly-min-orders", type=int, default=20)
     args = parser.parse_args(argv)
-    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    configure_logging()
     try:
         if args.command == "download":
             result = download_dataset(args.raw_dir, force=args.force)
@@ -85,6 +102,21 @@ def main(argv: list[str] | None = None) -> int:
             request = OrderRequest.model_validate_json(args.input.read_text())
             prediction = RiskService(args.artifact_dir, args.db_path).predict([request])[0]
             print(prediction.model_dump_json(indent=2))
+        elif args.command == "build-insights":
+            from fulfilliq.analytics.build import build_insights
+
+            result = build_insights(
+                Settings(data_dir=args.data_dir, artifact_dir=args.artifact_dir),
+                module=args.module,
+                min_support=args.min_support,
+                min_confidence=args.min_confidence,
+                min_lift=args.min_lift,
+                max_length=args.max_length,
+                min_seller_orders=args.min_seller_orders,
+                contamination=args.contamination,
+                anomaly_min_orders=args.anomaly_min_orders,
+            )
+            print(json.dumps(result, indent=2, allow_nan=False))
         else:
             engine = make_engine(args.db_path, readonly=True)
             try:
