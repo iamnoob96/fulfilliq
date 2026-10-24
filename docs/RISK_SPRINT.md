@@ -75,3 +75,19 @@ the aggregates. This is contextual evidence rather than causal attribution.
 
 Shared placement and history code generates both training and API features.
 Schema 1 artifacts remain loadable; schema 2 requires matching history metadata.
+
+Schema 2 preprocessing logs positive magnitudes/counts and promised lead time;
+calendar values, rates, duration means and signed slack are median-imputed and
+scaled without logs. Missing-value indicators and unknown-category handling are
+retained. Both estimators use the existing fixed hyperparameters (seed 42), with
+no additional search. The old model without its sigmoid is measured on
+validation only as a calibration ablation; it is not a promotion candidate.
+
+`fulfilliq experiment-risk --output docs/results/risk-sprint-20261024.json`
+runs the protocol and preserves the active pointer. Add `--promote-if-qualified`
+to apply the predeclared gates. Existing output paths are rejected. The selected
+challenger is saved as a separate version even when it fails; no other
+challenger is evaluated on test. Aggregate reports are safe to commit; local
+model/history binaries remain ignored. Retraining the original `train` command
+still uses the original schema-1 workflow; use this experiment command to
+reproduce the sprint rather than silently changing the historical benchmark.

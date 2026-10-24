@@ -36,6 +36,17 @@ def main(argv: list[str] | None = None) -> int:
     train.add_argument("--lag-days", type=int, default=1)
     train.add_argument("--history-window-days", type=int, default=180)
     train.add_argument("--as-of", help="Optional source-local observation cutoff timestamp")
+    experiment = commands.add_parser(
+        "experiment-risk", help="Run frozen, bounded risk challenger comparison"
+    )
+    experiment.add_argument("--db-path", type=Path, default=settings.database_path)
+    experiment.add_argument("--artifact-dir", type=Path, default=settings.artifact_dir)
+    experiment.add_argument("--output", type=Path, required=True)
+    experiment.add_argument(
+        "--promote-if-qualified",
+        action="store_true",
+        help="Activate only if every preregistered validation/test gate passes",
+    )
     score = commands.add_parser("score", help="Score an order JSON file using the persisted model")
     score.add_argument("--input", type=Path, required=True)
     score.add_argument("--db-path", type=Path, default=settings.database_path)
@@ -97,6 +108,29 @@ def main(argv: list[str] | None = None) -> int:
                         "model_version": metadata["model_version"],
                         "selected_model": metadata["selected_model"],
                         "test": metadata["comparison"][metadata["selected_model"]]["test"],
+                    },
+                    indent=2,
+                )
+            )
+        elif args.command == "experiment-risk":
+            from fulfilliq.modeling.experiment import run_risk_experiment
+
+            report = run_risk_experiment(
+                args.db_path,
+                args.artifact_dir,
+                args.output,
+                promote_if_qualified=args.promote_if_qualified,
+            )
+            print(
+                json.dumps(
+                    {
+                        key: report[key]
+                        for key in (
+                            "selected_challenger",
+                            "qualified",
+                            "promoted",
+                            "promotion_checks",
+                        )
                     },
                     indent=2,
                 )
