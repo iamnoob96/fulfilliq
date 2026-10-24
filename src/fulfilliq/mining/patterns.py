@@ -134,6 +134,12 @@ def mine_patterns(
         },
         "algorithms": results,
         "algorithms_agree": same,
+        "itemsets": sorted(
+            [{"items": sorted(row.itemsets), "support": float(row.support),
+              "support_count": round(row.support * len(baskets))}
+             for row in itemsets["apriori"].itertuples()],
+            key=lambda row: (-row["support"], row["items"]),
+        ),
         "rules": rules,
         "interpretation": "Exploratory full-history associations, not causal findings or "
         "independent held-out confirmation. One category/state summary per "

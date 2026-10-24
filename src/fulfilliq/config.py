@@ -13,6 +13,7 @@ class Settings:
     artifact_dir: Path = field(
         default_factory=lambda: Path(os.environ.get("FULFILIQ_ARTIFACT_DIR", "artifacts")).resolve()
     )
+    write_token: str = field(default_factory=lambda: os.environ.get("FULFILIQ_WRITE_TOKEN", ""), repr=False)
 
     @property
     def raw_dir(self) -> Path:
@@ -25,3 +26,7 @@ class Settings:
     @property
     def database_path(self) -> Path:
         return self.processed_dir / "fulfilliq.sqlite3"
+
+    @property
+    def review_database_path(self) -> Path:
+        return self.processed_dir / "operations.sqlite3"

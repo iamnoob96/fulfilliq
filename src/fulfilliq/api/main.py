@@ -4,8 +4,11 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from fulfilliq import __version__
 from fulfilliq.analytics.store import InsightUnavailable
+from fulfilliq.api.console_routes import console_router
+from fulfilliq.api.explorer_routes import explorer_router
 from fulfilliq.api.health import database_status
 from fulfilliq.api.intelligence_schemas import ErrorResponse
+from fulfilliq.api.report_files import report_files_router
 from fulfilliq.api.routes import intelligence_router
 from fulfilliq.api.schemas import HealthResponse
 from fulfilliq.config import Settings
@@ -67,6 +70,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return JSONResponse(status_code=422, content={"detail": str(exc)})
 
     app.include_router(intelligence_router(settings))
+    app.include_router(console_router(settings))
+    app.include_router(explorer_router(settings))
+    app.include_router(report_files_router(settings))
     return app
 
 
