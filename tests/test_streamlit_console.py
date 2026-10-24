@@ -10,6 +10,8 @@ from fulfilliq.config import Settings
 from fulfilliq.console.client import BackendClient, BackendError
 from fulfilliq.ingestion.pipeline import ingest
 
+pytest.importorskip("streamlit", reason="Install the console extra to run UI tests")
+
 
 @pytest.fixture
 def console_backend(raw_dir, tmp_path, monkeypatch):

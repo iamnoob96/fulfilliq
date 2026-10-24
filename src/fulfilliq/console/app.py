@@ -284,7 +284,8 @@ def show_reports(params):
     report = client.get("/reports/operations", **params)
     st.download_button("Download consolidated Markdown report", report["markdown"],
                        file_name="fulfilliq-operations.md", mime="text/markdown")
-    st.markdown(report["markdown"])
+    with st.expander("Preview consolidated report"):
+        st.markdown(report["markdown"])
     for name in ("regions", "sellers", "bottlenecks", "rules"):
         with st.expander("Export " + name):
             table(report[name], "report_" + name, export=True)
@@ -293,7 +294,14 @@ def show_reports(params):
     if not result["available"]:
         st.info(result["message"])
     else:
-        st.json(result["summary"])
+        summary = result["summary"]
+        cols = st.columns(2)
+        cols[0].metric("Shared Python/R transactions", f"{summary['transaction_count']:,}")
+        cols[1].metric("Matching late-delivery rules", summary["comparison"]["rules_compared"])
+        st.caption("Support, confidence and lift agree within 1e-8. Plots describe all valid "
+                   "historical deliveries; associations do not demonstrate causes.")
+        with st.expander("R execution and reproducibility details"):
+            st.json(summary)
         for filename in result["files"]:
             url = client.url + "/api/v1/reports/r/files/" + filename
             if filename.endswith(".png"):
