@@ -130,7 +130,7 @@ def scoring_router(settings: Settings):
     @router.get("/{job_id}/export.csv", response_class=Response)
     def export(job_id: str, capacity: int | None = Query(default=None, ge=0, le=5000),
                review_status: ReviewStatus | None = None, include_unavailable: bool = False):
-        report = store.results(job_id, capacity=capacity, limit=settings.scoring_max_orders,
+        report = store.results(job_id, capacity=capacity, limit=store.get(job_id)["candidate_count"],
                                review_status=review_status, include_unavailable=include_unavailable)
         fields = ["order_id", "rank", "eligibility", "delay_probability", "model_version", "review_status",
                   "within_review_capacity", "unavailable_reason", "processed_at_utc"]

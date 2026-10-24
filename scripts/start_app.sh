@@ -10,7 +10,9 @@ export FULFILIQ_WRITE_TOKEN="${FULFILIQ_WRITE_TOKEN:-$(.venv/bin/python -c 'impo
 export FULFILIQ_API_URL="http://127.0.0.1:${FULFILIQ_API_PORT:-8000}"
 api_pid=''
 console_pid=''
+worker_pid=''
 cleanup() {
+  [[ -z "$worker_pid" ]] || kill "$worker_pid" 2>/dev/null || true
   [[ -z "$console_pid" ]] || kill "$console_pid" 2>/dev/null || true
   [[ -z "$api_pid" ]] || kill "$api_pid" 2>/dev/null || true
 }
@@ -32,12 +34,13 @@ for _ in range(60):
 else:
     raise SystemExit('Backend did not start. Check port availability and logs.')
 PY
+.venv/bin/python -m fulfilliq.operations.worker &
+worker_pid=$!
 .venv/bin/streamlit run src/fulfilliq/console/app.py --server.address 127.0.0.1 \
   --server.port "${FULFILIQ_CONSOLE_PORT:-8501}" --server.headless true \
   --browser.gatherUsageStats false &
 console_pid=$!
 echo "Console: http://127.0.0.1:${FULFILIQ_CONSOLE_PORT:-8501} · Swagger: $FULFILIQ_API_URL/docs"
-wait -n "$api_pid" "$console_pid" 2>/dev/null || {
-  # macOS ships bash 3.2 without wait -n.
-  while kill -0 "$api_pid" 2>/dev/null && kill -0 "$console_pid" 2>/dev/null; do sleep 1; done
-}
+while kill -0 "$api_pid" 2>/dev/null && kill -0 "$console_pid" 2>/dev/null && kill -0 "$worker_pid" 2>/dev/null; do sleep 1; done
+echo 'An application service stopped; shutting down peer services.' >&2
+exit 1

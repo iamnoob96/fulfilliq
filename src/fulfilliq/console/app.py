@@ -8,6 +8,7 @@ import plotly.express as px
 import streamlit as st
 
 from fulfilliq.console.client import BackendClient, BackendError, csv_export
+from fulfilliq.console.cohorts import cohort_panel
 
 st.set_page_config(page_title="FulfillIQ · Operations", page_icon="📦", layout="wide")
 client = BackendClient()
@@ -187,6 +188,11 @@ def show_orders(params, options):
         st.session_state["discovery_key"] = discovery_key
     page = st.session_state.get("browse_page", 1)
     listing = client.get("/orders", **filters, limit=size, offset=(page-1)*size)
+    with st.expander("Cohort Scoring — persistent jobs", expanded=False):
+        cohort_order = cohort_panel(client, filters, listing["total"], STATUSES)
+    if cohort_order:
+        order_details(*cohort_order)
+        return
     pages = max(1, (listing["total"] + size - 1)//size)
     if page > pages:
         st.session_state["browse_page"] = pages

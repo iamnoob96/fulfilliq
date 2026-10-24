@@ -55,6 +55,8 @@ def test_creation_authentication_limits_and_frozen_membership(job_system):
     store.reviews.update("o1", ReviewUpdate(
         status="resolved", notes="Synthetic", expected_revision=0))
     assert store.get(identifier)["candidate_count"] == 6
+    assert finish(store, identifier)["processed_count"] == 6
+    assert any(row["order_id"] == "o1" and row["review_status"] == "resolved" for row in store.results(identifier)["items"])
     assert client.get("/api/v1/scoring-jobs").json()["total"] == 1
     assert client.get("/api/v1/scoring-jobs/missing").status_code == 404
     small = Settings(data_dir=settings.data_dir, artifact_dir=settings.artifact_dir, scoring_max_orders=2)
@@ -83,6 +85,10 @@ def test_restart_progress_ranking_export_and_review_status(job_system):
     assert [r["within_review_capacity"] for r in ranked["items"]] == [True, False, False]
     rows = list(csv.DictReader(io.StringIO(client.get(f"/api/v1/scoring-jobs/{identifier}/export.csv", params={"capacity": 1}).text)))
     assert [r["order_id"] for r in rows] == ["o1", "o4", "o2"]
+    lower_limit = TestClient(create_app(Settings(data_dir=settings.data_dir, artifact_dir=settings.artifact_dir,
+                                                scoring_max_orders=2)))
+    historical_csv = lower_limit.get(f"/api/v1/scoring-jobs/{identifier}/export.csv")
+    assert len(list(csv.DictReader(io.StringIO(historical_csv.text)))) == 3
     before_requests = len(state["requests"])
     assert not restarted.run_once(job_id=identifier)
     assert len(state["requests"]) == before_requests == 3
@@ -143,19 +149,20 @@ def test_snapshot_drift_stops_job(job_system, changed):
     assert client.post(f"/api/v1/scoring-jobs/{identifier}/resume", headers={"Authorization": "Bearer fixture"}).status_code == 409
 
 
-def test_missing_model_failure_is_recoverable_and_does_not_expose_paths(job_system, monkeypatch):
+@pytest.mark.parametrize("method", ["predict", "load"])
+def test_missing_model_failure_is_recoverable_and_does_not_expose_paths(job_system, monkeypatch, method):
     _, client, store, _ = job_system
     identifier = create(client)
-    original = RiskService.predict
+    original = getattr(RiskService, method)
 
     def missing(*_):
         raise OSError("/private/local/secret/model")
 
-    monkeypatch.setattr(RiskService, "predict", missing)
+    monkeypatch.setattr(RiskService, method, missing)
     store.run_once(batch_size=6)
     assert store.get(identifier)["status"] == "failed"
     assert "/private" not in store.get(identifier)["error_summary"]
-    monkeypatch.setattr(RiskService, "predict", original)
+    monkeypatch.setattr(RiskService, method, original)
     store.resume(identifier)
     assert finish(store, identifier)["ranking_complete"]
 

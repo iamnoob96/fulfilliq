@@ -158,3 +158,40 @@ def test_csv_formula_text_is_escaped_without_changing_numeric_values():
         "note": ["=SUM(A1:A2)", "+command", "normal"], "amount": [-5, 0, 12]}))))
     assert result.note.tolist() == ["'=SUM(A1:A2)", "'+command", "normal"]
     assert result.amount.tolist() == [-5, 0, 12]
+
+
+def test_durable_cohort_progress_survives_browser_restart_and_opens_investigation(console_backend, monkeypatch):
+    from streamlit.testing.v1 import AppTest
+
+    from fulfilliq.modeling.contracts import RiskResponse
+    from fulfilliq.modeling.inference import RiskService
+    from fulfilliq.operations.jobs import JobStore
+
+    monkeypatch.setattr(RiskService, "load", lambda _: {"model_version": "saved-fixture"})
+    monkeypatch.setattr(RiskService, "predict", lambda _, orders: [RiskResponse(
+        order_id=o.order_id, delay_probability=.5, threshold=.4, risk_category="high",
+        model_version="saved-fixture", recommendation="Review", rationale=[], warnings=[]) for o in orders])
+    entry = Path(__file__).resolve().parents[1] / "src/fulfilliq/console/app.py"
+    app = AppTest.from_file(entry).run(timeout=30)
+    app.sidebar.radio[0].set_value("Orders & review queue").run(timeout=30)
+    next(b for b in app.button if b.label == "Create persistent cohort job").click().run(timeout=30)
+    assert not app.exception and not app.error
+    store = JobStore(console_backend.application_settings)
+    identifier = store.list()["items"][0]["job_id"]
+    store.run_once(batch_size=2)
+    assert store.get(identifier)["processed_count"] == 2
+    # A new browser session discovers the persisted job without prior session state.
+    restarted = AppTest.from_file(entry).run(timeout=30)
+    restarted.sidebar.radio[0].set_value("Orders & review queue").run(timeout=30)
+    assert restarted.session_state["cohort_job"] == identifier
+    while store.run_once(batch_size=2):
+        pass
+    next(b for b in restarted.button if b.label == "Refresh cohort progress").click().run(timeout=30)
+    assert any("Complete cohort-wide" in value.value for value in restarted.success)
+    next(b for b in restarted.button if b.label == "Investigate cohort order").click().run(timeout=30)
+    assert not restarted.exception
+    next(box for box in restarted.text_area if box.label.startswith("Investigation notes")).set_value("Synthetic cohort investigation")
+    next(b for b in restarted.button if b.label == "Save review").click().run(timeout=30)
+    opened = restarted.session_state["cohort_open"][1]
+    assert console_backend.get(f"/api/v1/orders/{opened}").json()["review"]["notes"] == "Synthetic cohort investigation"
+    assert store.get(identifier)["processed_count"] == 6

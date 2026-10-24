@@ -225,8 +225,8 @@ class JobStore:
     def results(self, job_id, *, capacity=None, limit=100, offset=0, review_status=None, include_unavailable=False):
         job = self.get(job_id)
         capacity = job["review_capacity"] if capacity is None else capacity
-        if not 0 <= capacity <= self.settings.scoring_max_orders:
-            raise ValueError("Review capacity exceeds the configured cohort bound")
+        if not 0 <= capacity <= 5000:
+            raise ValueError("Review capacity must be within 0–5000")
         with self.connect() as conn:
             rows = conn.execute("""SELECT * FROM scoring_results WHERE job_id=? AND eligibility!='pending'
                 ORDER BY eligibility='scored' DESC,delay_probability DESC,candidate_sequence,order_id""", (job_id,)).fetchall()
