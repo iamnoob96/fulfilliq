@@ -1,0 +1,20 @@
+{
+  "baseline": {
+    "model_version": "20261024T031015-f87ea646",
+    "feature_version": 1,
+    "orders_checked": 16,
+    "feature_columns": 22,
+    "feature_parity": "passed",
+    "probability_parity": "passed"
+  },
+  "challenger": {
+    "model_version": "20261024T035136-9caf890e",
+    "feature_version": 2,
+    "orders_checked": 16,
+    "feature_columns": 32,
+    "feature_parity": "passed",
+    "probability_parity": "passed"
+  },
+  "selection": "Eight evenly spaced purchases plus eight earliest multi-seller purchases; no outcome-based selection",
+  "multi_seller_orders_checked": 8
+}

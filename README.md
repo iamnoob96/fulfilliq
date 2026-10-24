@@ -126,6 +126,11 @@ improved held-out top-decile precision from 10.30% to 14.56%, but **did not
 promote** because validation ranking regressed. See the preserved comparisons in
 [experimental results](docs/RESULTS.md) and [protocol](docs/RISK_SPRINT.md).
 
+Batch scoring accepts optional `review_capacity` and returns a separate
+`review_order_ids` queue containing the highest-scored orders within that batch.
+The existing `priority_order_ids` threshold-based queue remains compatible. See
+the [request example and capacity semantics](docs/API.md).
+
 The dataset is about 126 MB of CSVs. Allow a few GB of disk and roughly 1–2 GB RAM for a
 full workflow; CPU parallelism is bounded. Training and mining take minutes depending on
 hardware. Stop the API during database refreshes. This is a local single-writer workflow.

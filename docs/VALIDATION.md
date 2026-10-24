@@ -3,7 +3,50 @@
 This section preserves the original ingestion baseline. Current end-to-end results are in
 [RESULTS.md](RESULTS.md) and [the aggregate experiment](results/experiment.json).
 
-## Complete backend verification — 24 October 2026
+## Delivery-risk sprint verification — 24 October 2026
+
+- **97 automated tests passed** after the risk sprint (the original 69 remain).
+  Local lint, formatting and diff checks passed. The only warning is the existing
+  Starlette/httpx test-client deprecation. No dependencies were added.
+  `uv sync --locked --extra dev --offline` succeeded with the existing cache.
+  Real warehouse verification still reports 99,441 orders and fact rows,
+  SQLite integrity `ok`, and zero foreign-key violations.
+- The real-data experiment used the unchanged source hashes and chronological
+  population: 58,954 train, 7,986 validation and 14,551 test orders. All four
+  configurations were compared using validation only; only the selected
+  challenger received a new test comparison. Results and membership hashes are
+  preserved in [risk-sprint-20261024.json](results/risk-sprint-20261024.json).
+- The challenger improved held-out metrics but failed the predeclared validation
+  ranking gates. The active model remains `20261024T031015-f87ea646`; the separate
+  schema-2 challenger is `20261024T035136-9caf890e`. No test-driven iteration or
+  replacement followed. Calibration-period prevalence drift and the validation
+  ablation are reported in [RESULTS.md](RESULTS.md).
+- Tests cover delayed outcome availability, strict timestamp equality, future
+  outcome perturbation, rolling-window expiry, cold starts, zero order values,
+  multi-seller and multi-item deduplication, training/API parity, v1/v2 artifact
+  loading, checksum/schema compatibility, invalid probabilities, budget metrics,
+  capacity validation and stable queue ties.
+- A temporary real HTTP server using the existing Olist database passed all
+  public routes, Swagger/OpenAPI, repeatable inference, single/batch parity, the
+  new capacity queue and expected 422/404 failures. The server was stopped.
+  [HTTP evidence](results/risk-sprint-api-smoke.json) preserves the active version.
+- Offline/API feature and predicted-probability parity also passed on **16 real
+  orders, including eight multi-seller orders**, for both feature schemas (22
+  and 32 columns). Sampling used purchase positions and seller multiplicity,
+  without selecting on outcomes. Comparisons used tolerance 1e-12.
+  [Parity evidence](results/risk-sprint-feature-parity.json) contains no order IDs.
+  Reproduce using `python scripts/check_risk_feature_parity.py --experiment
+  artifacts/risk-experiment.json` after running the experiment locally. This
+  check scores features without evaluating or tuning on outcomes.
+- GitHub was read-only verified as private during this sprint; visibility and
+  repository settings were not changed. Model binaries, raw data and SQLite
+  files remain ignored. Coherent tested commits were pushed throughout.
+
+This sprint was verified locally with real data. The clean-clone reproduction
+below belongs to the **original benchmark**, not the new challenger; it has not
+been repeated for this sprint.
+
+## Original complete backend verification — 24 October 2026
 
 - **69 automated tests passed** in the working project and a fresh GitHub clone.
   The original 27 regression cases remain; the original OpenAPI assertion was broadened
@@ -21,7 +64,7 @@ This section preserves the original ingestion baseline. Current end-to-end resul
   anomaly count and review result matched the original experiment **exactly**; UUIDs,
   timestamps and wall-clock runtimes were excluded. The serialized delivery model's
   SHA-256 also matched. [Reproduction evidence](results/reproduction.json) records the
-  tested revision; later changes only clarify documentation/module descriptions.
+  tested revision. The delivery-risk changes above postdate that clone run.
 - Missing/stale models, changed input hashes, checksum damage, malformed report shapes,
   incoherent dates, unsupported timestamp ranges, prohibited outcome inputs, pagination,
   cold starts, multiple sellers/items/reviews and calibrated temporal boundaries are tested.

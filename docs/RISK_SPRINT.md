@@ -91,3 +91,22 @@ challenger is evaluated on test. Aggregate reports are safe to commit; local
 model/history binaries remain ignored. Retraining the original `train` command
 still uses the original schema-1 workflow; use this experiment command to
 reproduce the sprint rather than silently changing the historical benchmark.
+
+For feature/inference parity on real source records after the experiment:
+
+```sh
+python scripts/check_risk_feature_parity.py --experiment artifacts/risk-experiment.json
+```
+
+This compares both saved feature schemas and predicted probabilities on 16
+deterministically sampled purchases, including multi-seller examples. It uses
+the source product dimensions and coordinates to reconstruct API payloads;
+selection never uses outcome labels. Optional `--output` writes a new aggregate
+report; existing output paths are rejected. It does not activate either model.
+
+Subsequent API work adds optional `review_capacity` and a separate
+`review_order_ids` queue. This ranks the submitted cohort without changing
+probabilities, the model version or the legacy F1-threshold queue. No new global
+high/medium/low categories are assigned: validation-relative percentile cutoffs
+would not guarantee a fixed workload under drift. The active model's existing
+high/standard semantics remain explicit in the API documentation.
