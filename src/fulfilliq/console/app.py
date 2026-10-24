@@ -62,10 +62,10 @@ def show_overview(params):
         chart(summary["monthly_volume"], "month", "orders", "Order volume over time", kind="line")
         chart(stages, "stage", "mean", "Mean observed stage durations (days)")
     with right:
-        chart(performance(params)["items"], "group", "late_rate", "Late rate by customer state")
-        sellers = performance(params, "seller", 20)
-        st.metric("Active sellers in cohort", sellers["total"])
-        chart(sellers["items"], "group", "total_orders", "Sellers with highest late rates · order volume")
+        regions = performance(params)["items"]
+        chart(regions, "group", "late_rate", "Late rate by customer state")
+        st.metric("Active sellers in cohort", summary["active_sellers"])
+        chart(regions, "group", "total_orders", "Order volume by customer state")
     with st.expander("Definitions and denominators"):
         st.json(summary)
 
@@ -131,7 +131,12 @@ def show_orders(params):
             if queue["unavailable"]:
                 st.warning("Some orders cannot be reconstructed honestly.")
                 table(queue["unavailable"], "unavailable")
-        selected = st.selectbox("Inspect candidate order", identifiers)
+        inspection_ids = identifiers
+        if queue and st.session_state.get("queue_cohort") == json.dumps(cohort, sort_keys=True):
+            ordered_ids = [row["order_id"] for row in sorted(
+                queue["predictions"], key=lambda row: -row["delay_probability"])]
+            inspection_ids = ordered_ids + [value for value in identifiers if value not in ordered_ids]
+        selected = st.selectbox("Inspect candidate order", inspection_ids)
         order_details(selected)
     with st.expander("Find a historical order by identifier"):
         identifier = st.text_input("Order identifier")
@@ -271,6 +276,10 @@ def show_model():
 
 
 def show_reports(params):
+    with st.expander("Backend dependencies and artifact readiness"):
+        readiness = client.get("/console/dependencies")
+        table(readiness["dependencies"], "dependency_readiness")
+        st.caption(readiness["interpretation"])
     st.caption("Operational tables use the selected cohort. Mining findings retain their saved full-history scope.")
     report = client.get("/reports/operations", **params)
     st.download_button("Download consolidated Markdown report", report["markdown"],

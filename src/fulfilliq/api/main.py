@@ -5,6 +5,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from fulfilliq import __version__
 from fulfilliq.analytics.store import InsightUnavailable
 from fulfilliq.api.console_routes import console_router
+from fulfilliq.api.dependencies import dependency_router
 from fulfilliq.api.explorer_routes import explorer_router
 from fulfilliq.api.health import database_status
 from fulfilliq.api.intelligence_schemas import ErrorResponse
@@ -73,6 +74,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(console_router(settings))
     app.include_router(explorer_router(settings))
     app.include_router(report_files_router(settings))
+    app.include_router(dependency_router(settings))
     return app
 
 

@@ -111,3 +111,22 @@ def test_feedback_redaction_and_report_reproducibility(application):
     assert "Historical Olist" in first.json()["markdown"]
     assert client.get("/api/v1/reports/operations", params={"region": "ZZ"}).json()["overview"]["total_orders"] == 0
     assert client.get("/api/v1/models/research").status_code == 200
+
+
+def test_dependency_checks_do_not_generate_or_train(tmp_path):
+    settings = Settings(data_dir=tmp_path, artifact_dir=tmp_path / "artifacts")
+    client = TestClient(create_app(settings))
+    result = client.get("/api/v1/console/dependencies")
+    assert result.status_code == 200
+    assert all(not row["ready"] for row in result.json()["dependencies"])
+    assert not result.json()["review_writes_enabled"]
+    assert not settings.database_path.exists()
+    assert not settings.artifact_dir.exists()
+
+
+def test_active_seller_counts_follow_item_filters(application):
+    _, client = application
+    assert client.get("/api/v1/analytics/overview").json()["active_sellers"] == 2
+    assert client.get("/api/v1/analytics/overview", params={"seller_id": "s1"}).json()["active_sellers"] == 1
+    assert client.get("/api/v1/analytics/overview", params={"product_category": "books"}).json()["active_sellers"] == 1
+    assert client.get("/api/v1/analytics/overview", params={"region": "ZZ"}).json()["active_sellers"] == 0

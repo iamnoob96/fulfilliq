@@ -134,9 +134,15 @@ class OperationsService:
 
     def overview(self, filters: CohortFilter | None = None) -> dict:
         frame = self.cohort(filters)
+        members = self.memberships.loc[self.memberships.order_id.isin(frame.order_id)]
+        if filters and filters.seller_id:
+            members = members.loc[members.seller_id.eq(filters.seller_id)]
+        if filters and filters.product_category:
+            members = members.loc[members.product_category.eq(filters.product_category)]
         return {
             "target_definition": TARGET_DEFINITION,
             **self.summarize(frame),
+            "active_sellers": int(members.seller_id.nunique()),
             "status_counts": {str(k): int(v) for k, v in frame.order_status.value_counts().items()},
             "monthly_volume": [
                 {"month": str(month), "orders": len(group)}

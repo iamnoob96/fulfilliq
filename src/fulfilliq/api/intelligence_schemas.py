@@ -49,6 +49,7 @@ class MonthVolume(BaseModel):
 class OverviewResponse(BaseModel):
     target_definition: str
     total_orders: int
+    active_sellers: int = 0
     eligible_outcomes: int
     excluded_outcomes: int
     late_orders: int

@@ -55,17 +55,23 @@ class ReviewStore:
             conn.close()
             raise
 
-    def all(self) -> dict[str, dict]:
+    def statuses(self) -> dict[str, dict]:
         conn = self.connect()
         try:
             return {row["order_id"]: dict(row) for row in conn.execute(
-                "SELECT * FROM order_reviews_workflow"
+                "SELECT order_id, status FROM order_reviews_workflow"
             )}
         finally:
             conn.close()
 
     def get(self, order_id: str) -> dict:
-        return self.all().get(order_id, ReviewState(order_id=order_id).model_dump())
+        conn = self.connect()
+        try:
+            row = conn.execute("SELECT * FROM order_reviews_workflow WHERE order_id=?",
+                               (order_id,)).fetchone()
+            return dict(row) if row else ReviewState(order_id=order_id).model_dump()
+        finally:
+            conn.close()
 
     def update(self, order_id: str, change: ReviewUpdate) -> dict:
         conn = self.connect()

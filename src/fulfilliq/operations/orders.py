@@ -42,7 +42,7 @@ class OrderService:
 
     def list(self, filters: CohortFilter, status: str | None, limit: int, offset: int) -> dict:
         frame = self.operations.cohort(filters)
-        states = self.reviews.all()
+        states = self.reviews.statuses()
         frame["review_status"] = frame.order_id.map(
             lambda value: states.get(value, {}).get("status", "pending")
         )
