@@ -10,6 +10,9 @@ class Settings:
     data_dir: Path = field(
         default_factory=lambda: Path(os.environ.get("FULFILIQ_DATA_DIR", "data")).resolve()
     )
+    artifact_dir: Path = field(
+        default_factory=lambda: Path(os.environ.get("FULFILIQ_ARTIFACT_DIR", "artifacts")).resolve()
+    )
 
     @property
     def raw_dir(self) -> Path:
