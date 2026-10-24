@@ -136,3 +136,48 @@ carrier integration, automated incident resolver or validated intervention engin
 ![Actual running overview](screenshots/overview.png)
 
 ![Actual R comparison and delivery-duration plot](screenshots/r-report.png)
+
+## Reliable investigation workflow (public-source sprint)
+
+Source visibility is public; the running console/API remain localhost-only and the
+write token is still required. No project source-code license has been selected.
+Olist attribution and the dataset's separate CC BY-NC-SA terms remain unchanged.
+
+Reproducible walkthrough with existing artifacts:
+
+1. Open **Overview**, inspect a state's late rate, then use **Investigate customer
+   state → Find orders in this region**. Dates, seller and category filters remain.
+2. On **Orders & review queue**, optionally choose a historical order status or
+   observed delivery outcome. These are retrospective discovery filters, not model
+   inputs. Investigation counts summarize this discovery cohort before the workflow
+   filter. Delivery outcome `unavailable` includes unresolved or invalid outcomes.
+3. Use previous/next or the bounded **Go to page** input. Changing discovery filters
+   resets to page one; navigating away and back retains page and selected order.
+4. Choose capacity and **Score candidate page**. Ranking is strictly page-local,
+   never cohort-wide. The run shows candidate/scored counts, UTC timestamp and model
+   version. Ineligible reconstructions remain explicitly unavailable. The last four
+   scored pages are cached per Streamlit session using candidate IDs, warehouse
+   snapshot and active model version. Revisiting a valid cached page avoids inference;
+   model/data changes invalidate its use. Changing capacity only adjusts the displayed
+   budget. API/browser restarts clear scores, while saved investigations persist.
+5. Filter the scored queue by workflow state, then **Inspect highest-risk match**, or
+   select any candidate. Model probability stays separate from observed outcomes and
+   human decisions. **Open seller evidence** and **Find this seller’s orders** connect
+   investigation to existing seller/segment/anomaly outputs, preserving cohort filters.
+6. Save a note/status, visit another page, and return. Counts/status refresh without
+   rescoring. Forms submit the revision actually opened, rather than a newer revision
+   fetched during Save. If another session saved first, the stale write is rejected and
+   the draft remains visible. Copy any text to retain, then use **Reload saved review
+   (discard draft)** before merging and saving again. Saved changes survive restarts.
+7. Export the displayed candidates or status-filtered risk queue as CSV, or export an
+   operational report under **Reports & R**. CSV rows match the displayed filter and
+   risk ordering; formula-like text is escaped for spreadsheets. Local operational
+   exports, secrets and databases must never be committed.
+
+Verification commands remain in the guide above. The new automated checks cover
+concurrent browser drafts, navigation, queue caching/invalidation, status counts,
+outcome filters, pagination and CSV consistency. Real-data checks compare the filtered
+RJ late-delivery cohort to an independent read-only warehouse query and exercise saved
+model replay plus review persistence using a temporary workflow database. This avoids
+adding demonstration notes to the shared operational database. No ML optimization,
+retraining, recalibration or promotion is performed.

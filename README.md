@@ -6,6 +6,7 @@ risk, investigate historical fulfillment, mine delay associations, segment selle
 screen unusual operations and analyze Portuguese reviews. There is no storefront.
 
 Public source repository: [iamnoob96/fulfilliq](https://github.com/iamnoob96/fulfilliq).
+The source is public; no source-code license has been selected. Dataset terms are separate.
 
 ## Run the complete application
 
@@ -21,6 +22,9 @@ Open **[Operations console](http://127.0.0.1:8501)** or
 The Streamlit/Plotly console calls FastAPI for overview KPIs, historical order replay,
 capacity-limited review queues, persistent investigation notes/status, logistics,
 seller peers, mining, Portuguese review evidence, saved model results and report exports.
+Discovery includes status/outcome filters and investigation counts. Region/seller drill-downs
+connect findings to orders; saved page scores, review capacity and selection survive navigation.
+Stale edits retain their draft and require an explicit reload. Ranking remains page-local.
 Human decisions are stored in a separate SQLite database; historical orders remain
 read-only. Both services bind to loopback and review writes require a shared local token.
 
@@ -262,10 +266,12 @@ engineering; this is exploratory evaluation, not a blind external production ben
 
 ## Tests, artifacts and limitations
 
-The application integration checkpoint passes **139 tests** with the console extra
+The application integration checkpoint passed **139 tests** with the console extra
 installed. All eight console pages were rendered against real Olist data, saved-model
 replay was exercised, Python/R rule metrics matched, and separate workflow persistence
 survived API recreation. The saved delivery model was not refitted or promoted by this assignment.
+The later workflow-reliability sprint passes **143 tests**, including stale draft conflicts,
+cache validity, navigation, discovery filters and CSV consistency.
 Run `uv run --extra dev --extra console pytest -q`; opt-in real-data and console checks
 are documented in [the operations guide](docs/OPERATIONS_CONSOLE.md).
 

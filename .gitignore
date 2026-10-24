@@ -37,3 +37,12 @@ artifacts/*
 *.h5
 *.onnx
 *.pt
+# Local console secrets and operational exports
+.streamlit/secrets.toml
+/exports/
+/review_queue.csv
+/candidate_orders.csv
+/unavailable.csv
+/fulfilliq-operations.md
+.Rhistory
+.RData

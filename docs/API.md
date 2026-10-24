@@ -186,3 +186,22 @@ explicitly full-history snapshots. Equal inputs produce equal report text, inclu
 saved snapshot provenance. R availability is optional: missing/incompatible outputs
 return 200 with `available=false`, setup guidance and no files. R file paths are restricted
 to known names, and completed outputs must match current warehouse source hashes.
+
+### Discovery and replay reliability additions
+
+`GET /orders` additionally accepts `order_status` (one of the eight source states),
+`delivery_outcome=late|on_time|unavailable`, and repeated `order_ids` (up to 100 bounded
+identifiers). The latter refreshes workflow state for an already scored page without
+running inference. Rows now include historical status/outcome as browsing context;
+these fields never enter the independently reconstructed checkout payload.
+`review_counts` includes all five workflow states after cohort/status/outcome/ID
+filters but before `review_status`; `cohort_total` is their sum. `total` remains the
+count after the workflow filter, before pagination. Original fields are retained.
+
+`GET /console/options` adds source order states, a warehouse snapshot token and the
+active model manifest version. Replay adds `scored_at_utc`, `model_version`,
+`warehouse_snapshot`, `candidate_count`, and `scored_count`. These describe exactly
+one submitted batch, not a global ranking. If the warehouse changes during scoring,
+409 asks the caller to retry. Optimistic review conflicts retain their existing 409
+contract. Malformed discovery filters return 422. Operational updates do not invalidate
+prediction inputs, because workflow data remains in the separate database.

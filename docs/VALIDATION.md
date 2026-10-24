@@ -273,3 +273,21 @@ binaries or operational-note files. Synthetic test tokens/notes and anonymized O
 aggregates are intentional. This bounded scan cannot prove absence of every possible
 secret. No history was rewritten. Olist attribution and CC BY-NC-SA terms remain; no
 source-code license has been selected, and no new license is applied here.
+
+Reliability workflow verification completed with **143 passing automated tests**.
+New coverage includes the stale-form revision bug (another session's update is
+preserved), draft reload/merge, saved-note return navigation, cached scoring across
+navigation/capacity changes, model-version invalidation, filtered queue CSV rows,
+spreadsheet-formula escaping, source-status/outcome filters, and pagination/counts.
+The existing Starlette/httpx deprecation warning remains non-failing.
+
+Real Olist smoke checks independently counted **1,664** valid late delivered orders
+for RJ and matched the discovery API exactly. Temporary workflow state survived API
+recreation. Single and replay predictions matched; warehouse, active pointer and model
+binary checksums matched the prior integration checkpoint. No shared real investigation
+notes were created by these checks. Existing mining/NLP/R report endpoints still loaded.
+Browser inspection followed an overview regional drill-down into **413 AL orders**
+across nine pages and scored **50/50** candidates with visible UTC timestamp, model
+version and page-local scope. No global/cohort-wide ranking claim is made.
+Runtime verification outputs/screenshots are kept locally outside Git; no generated
+operational files or private notes are added to the public repository.
