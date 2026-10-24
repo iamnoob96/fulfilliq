@@ -106,6 +106,7 @@ html { scroll-behavior: smooth; }
 .editorial-quote { border-left: 2px solid var(--color-accent); padding: .3rem 1.2rem; margin: 1rem 0; }
 .editorial-quote p { font: 1.15rem/1.65 var(--serif); margin: .2rem 0; }
 .editorial-quote small { font: .7rem/1.6 var(--mono); }
+.editorial-figure-title { font: 500 1.4rem/1.35 var(--serif); letter-spacing: -.02em; margin: 1rem 0 .3rem; overflow-wrap: anywhere; }
 [data-testid="stMetric"] { border-top: 1px solid var(--line); padding: .8rem 0; min-width: 0; }
 [data-testid="stMetricLabel"] p { font: .73rem/1.5 var(--sans); text-transform: uppercase; letter-spacing: .055em; }
 [data-testid="stMetricValue"] { font: 400 clamp(1.7rem, 2.7vw, 3.2rem)/1.2 var(--mono);
@@ -114,7 +115,7 @@ html { scroll-behavior: smooth; }
 .st-key-overview_spread { background: var(--color-surface); padding: 1.1rem 1.5rem; border-top: 2px solid var(--color-ink); }
 .st-key-overview_spotlight [data-testid="stMetricValue"] { font-size: clamp(3rem, 5.5vw, 5.7rem); }
 .st-key-overview_spread [data-testid="stMetric"] { border: 0; }
-[data-testid="stHeading"] h2, [data-testid="stHeading"] h3 { font-family: var(--serif); font-weight: 500; letter-spacing: -.025em; }
+[data-testid="stHeading"] h2, [data-testid="stHeading"] h3 { font-family: var(--serif); font-weight: 500; letter-spacing: -.025em; overflow-wrap: anywhere; }
 [data-testid="stCaptionContainer"] p { font-size: .79rem; line-height: 1.6; color: var(--color-ink); opacity: .83; }
 [data-testid="stWidgetLabel"] p { font-size: .87rem; }
 [data-testid="stExpander"] { border-color: var(--line); border-radius: 2px; background: transparent; }
@@ -126,6 +127,9 @@ button[kind="primary"] { color: var(--color-ink) !important; }
 button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible {
   outline: 2px solid var(--color-ink) !important; outline-offset: 3px; }
 [data-testid="stAlert"] { border-radius: 2px; color: var(--color-ink); border: 1px solid var(--line); background: var(--color-surface); }
+[data-testid="stAlertContainer"], [data-testid^="stAlertContent"] {
+  background: transparent !important; color: var(--color-ink) !important; }
+[data-testid="stAlert"] [data-testid="stMarkdownContainer"] p { color: var(--color-ink); }
 [data-testid="stAlert"] svg { fill: var(--color-ink); }
 [role="tablist"] { border-bottom: 1px solid var(--color-ink); gap: 1.5rem; }
 [role="tab"] { font-family: var(--sans); font-size: .87rem; padding-bottom: .85rem; }
@@ -133,6 +137,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 @media (max-width: 900px) {
  [data-testid="stMainBlockContainer"] { padding: 4rem 1.5rem 2rem; }
  .editorial-hero { column-gap: 1.5rem; }
+ .editorial-hero { grid-template-columns: 1fr; gap: 1rem; }
  .editorial-deck { font-size: .93rem; }
 }
 @media (max-width: 640px) {
@@ -182,6 +187,10 @@ def finding(label: str, text: str) -> None:
     st.html(
         f'<aside class="editorial-finding"><small>{escape(label)}</small><p>{escape(text)}</p></aside>'
     )
+
+
+def figure_title(title: str) -> None:
+    st.html(f'<h3 class="editorial-figure-title">{escape(title)}</h3>')
 
 
 def facts(values: dict) -> None:

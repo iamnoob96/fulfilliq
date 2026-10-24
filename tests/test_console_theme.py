@@ -1,11 +1,25 @@
 """Check data preservation and accessible content in the shared editorial components."""
 
+import tomllib
+from pathlib import Path
+
 import pandas as pd
 import pytest
 
 pytest.importorskip("streamlit")
 
 from fulfilliq.console import theme
+
+
+def test_configured_fonts_exist_under_the_console_static_root():
+    root = Path(__file__).resolve().parents[1]
+    config = tomllib.loads((root / ".streamlit/config.toml").read_text())
+    assert config["server"]["enableStaticServing"]
+    console = root / "src/fulfilliq/console"
+    for face in config["theme"]["fontFaces"]:
+        relative = face["url"].removeprefix("app/")
+        assert relative.startswith("static/fonts/")
+        assert (console / relative).read_bytes()[:4] == b"\x00\x01\x00\x00"
 
 
 def test_editorial_charts_preserve_observations_and_units():

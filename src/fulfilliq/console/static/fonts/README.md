@@ -7,5 +7,5 @@ These unmodified Google Fonts files are bundled so the console works without fon
 - IBM Plex Mono — https://github.com/google/fonts/tree/main/ofl/ibmplexmono
 
 Each family retains its SIL Open Font License in the adjacent `*-OFL.txt` file.
-Streamlit serves only this `static/` directory at `/app/static/`. System serif,
+Streamlit serves the console script's `static/` directory at `/app/static/`. System serif,
 sans-serif and monospaced fallbacks are declared in the console theme.

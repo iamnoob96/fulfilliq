@@ -34,20 +34,29 @@ logistics <- read.csv(file.path(inputs,"logistics.csv"))
 regions <- read.csv(file.path(inputs,"regions.csv"))
 sellers <- read.csv(file.path(inputs,"sellers.csv"))
 write.csv(regions, file.path(output,"region-summary.csv"), row.names=FALSE)
-base_theme <- theme_minimal(base_size=12)
+palette <- c(accent="#DC6D18", background="#FFF4E4", surface="#F8E0C9",
+             ink="#2B1A12", secondary="#B1AA81")
+base_theme <- theme_minimal(base_size=12, base_family="serif") +
+  theme(text=element_text(colour=palette[["ink"]]),
+        plot.title=element_text(size=18, margin=margin(b=16)),
+        plot.background=element_rect(fill=palette[["background"]], colour=NA),
+        panel.background=element_rect(fill=palette[["background"]], colour=NA),
+        panel.grid.minor=element_blank(),
+        panel.grid.major=element_line(colour=adjustcolor(palette[["ink"]],alpha.f=.12)),
+        axis.title=element_text(size=11), plot.margin=margin(20,20,20,20))
 save_plot <- function(plot, name) ggsave(file.path(output,name), plot + base_theme,
-                                       width=10, height=5.5, dpi=130, bg="white")
-save_plot(ggplot(logistics, aes(delivery_days)) + geom_histogram(binwidth=2, fill="#155e75") +
+                                       width=10, height=5.5, dpi=130, bg=palette[["background"]])
+save_plot(ggplot(logistics, aes(delivery_days)) + geom_histogram(binwidth=2, fill=palette[["accent"]]) +
             labs(title="Historical delivery durations · valid delivered orders", x="Purchase to delivery (days)",
                  y="Orders"), "delivery-duration.png")
-save_plot(ggplot(regions, aes(reorder(group,late_rate), late_rate)) + geom_col(fill="#155e75") +
+save_plot(ggplot(regions, aes(reorder(group,late_rate), late_rate)) + geom_col(fill=palette[["secondary"]]) +
             coord_flip() + labs(title="Historical late delivery rate by customer state", x="State",
                                  y="Late orders / eligible delivered orders"), "regional-delay.png")
 save_plot(ggplot(logistics, aes(distance_km, delivery_days)) + geom_bin_2d(bins=50, na.rm=TRUE) +
-            scale_fill_viridis_c(trans="log1p") + labs(title="Shipping distance and delivery duration · association only",
+            scale_fill_gradient(low=palette[["surface"]], high=palette[["ink"]], trans="log1p") + labs(title="Shipping distance and delivery duration · association only",
                 x="Approximate ZIP-centroid distance (km)", y="Delivery duration (days)",fill="Orders"),
           "distance-duration.png")
-save_plot(ggplot(sellers, aes(late_rate)) + geom_histogram(binwidth=.025, fill="#155e75", na.rm=TRUE) +
+save_plot(ggplot(sellers, aes(late_rate)) + geom_histogram(binwidth=.025, fill=palette[["accent"]], na.rm=TRUE) +
             labs(title="Seller late-rate distribution · multi-seller orders overlap",
                 x="Historical late rate (includes small sellers)",y="Sellers"), "seller-performance.png")
 session <- list(r_version=R.version.string,
