@@ -80,15 +80,25 @@ calendar-day lateness. Empty denominators give null rates, not zero.
 ## Mining, sellers and reviews
 
 `GET /api/v1/mining/association-rules`: filter saved rules by `min_support`, `min_confidence`,
-`min_lift`, `antecedent_contains`, then paginate. Lower query cutoffs cannot recover rules
-excluded during mining; change CLI parameters and regenerate to explore another search.
+`min_lift`, `antecedent_contains`, sort by lift/confidence/support and then paginate. The response
+includes the original `mining_parameters`, snapshot time, transaction count, algorithm runtimes,
+itemset counts and parity result. Lower query cutoffs cannot recover patterns excluded during
+mining; change CLI parameters and regenerate to explore another search.
+
+`GET /api/v1/mining/itemsets`: choose `algorithm=apriori|fp_growth`, filter by `min_support`,
+sort by support/support_count/size/items, and paginate. The selected algorithm is returned as
+view context with the saved runtimes, counts, parity, configuration and snapshot time. Both
+algorithms deliberately share one verified itemset representation; changing the selector does
+not remine the data. Filtered table exports contain the visible page and retain raw item tokens.
 
 `GET /api/v1/mining/anomalies`: filter `kind=order|seller|region|seller_fulfillment` or
-`entity_id`. Scores include method-specific thresholds/reasons and are not directly
-comparable between methods.
+`entity_id`. Responses include category counts, Isolation Forest's saved order threshold,
+reference population and global late rate, plus method-specific record thresholds/reasons.
+Scores are not directly comparable between methods.
 
-`GET /api/v1/sellers/segments`: filter `segment_id` or `seller_state`; includes profiles,
-silhouette, stability and low-volume exclusions. `GET /api/v1/sellers/{seller_id}/insights`
+`GET /api/v1/sellers/segments`: filter `segment_id` or `seller_state`; includes paged seller
+assignments, profile medians, feature names, silhouette, stability and low-volume exclusions.
+`GET /api/v1/sellers/{seller_id}/insights`
 returns order performance and available segment/review/anomaly associations. Missing
 optional reports appear in warnings; unknown order-item sellers return 404. Low-volume
 sellers can have no supported segment.

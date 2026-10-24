@@ -6,6 +6,19 @@ No ordinary API request runs a miner, fits a classifier, or regenerates artifact
 
 ## Association rules
 
+The console presents Apriori, FP-Growth, or a side-by-side comparison. Per-algorithm time and
+itemset counts come from the saved full-history mining snapshot. Selecting one algorithm changes
+the method explanation and benchmark context; the itemsets and rules remain the shared result
+that was checked for equal support. These saved runtimes describe one historical machine/run,
+not a reliable prediction of which algorithm will be faster on another workload.
+
+Console filters and sorting only select rows from this snapshot. The API includes the source
+mining thresholds and report timestamp. A requested cutoff below a saved threshold cannot
+recover patterns that were omitted; rerun the explicit offline `fulfilliq build-insights
+--module rules` command to create a new snapshot. Dashboard date/region/seller/category filters
+do not apply to mining, clustering or anomaly snapshots. Itemset/rule exports are bounded to
+the currently filtered page and include raw item tokens for reproducibility.
+
 One transaction represents one eligible delivered order. The target is exact timestamp
 lateness. Attributes include customer state, lexicographic primary seller state/category,
 fixed distance, item-value, freight, weight and backward-looking seller-delay bands.
@@ -30,6 +43,12 @@ delay label and do not enter these rules.
 
 ## Seller segmentation
 
+The Data Mining page displays the saved segment summaries, medians and evaluation measures;
+it does not refit clusters. Seller assignments are fetched by selected segment and bounded page.
+Compare a seller's observed historical features with its cluster medians before opening its
+Seller Intelligence record. Segment names repeat measured rates and volumes rather than
+assigning unsupported labels.
+
 Each seller/order pair contributes once to volume and outcome rates. Features are volume,
 median coherent approval-to-carrier duration, late rate, average item freight, average
 item shipping distance, mean seller-specific order value and category diversity. Value
@@ -51,6 +70,12 @@ adjusted Rand indices. Low stability is a limitation to report, not hide. The di
 KMeans/medoid distance metrics mean their silhouette values need that context.
 
 ## Anomaly screening
+
+The console separates unusual orders, sellers, regions and slow-fulfillment sellers. It displays
+the method's own evidence and threshold for the selected category. Isolation Forest scores,
+Wilson interval bounds and robust duration cutoffs have different meanings and must not be
+ranked on one shared scale. Order flags link to order review; seller flags link to seller
+history. A flag is a historical investigation candidate, not a confirmed incident.
 
 Isolation Forest fits the full historical checkout-characteristic population, using
 log-transformed, imputed and robust-scaled counts, values, freight, weight, volume, distance

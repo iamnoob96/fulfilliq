@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from fulfilliq.analytics.operations import CohortFilter
 from fulfilliq.analytics.store import load_insight
@@ -32,6 +32,11 @@ class FrequentItemset(BaseModel):
 
 class ItemsetsResponse(Page[FrequentItemset]):
     algorithm: str
+    algorithms: dict[str, dict[str, float | int]] = Field(default_factory=dict)
+    algorithms_agree: bool = False
+    transaction_count: int = 0
+    mining_parameters: dict[str, float | int] = Field(default_factory=dict)
+    created_at_utc: str | None = None
     interpretation: str
 
 
@@ -78,12 +83,25 @@ def explorer_router(settings: Settings) -> APIRouter:
     @router.get("/mining/itemsets", response_model=ItemsetsResponse)
     def itemsets(algorithm: Literal["apriori", "fp_growth"] = "apriori",
                  min_support: float = Query(default=0, ge=0, le=1),
+                 sort_by: Literal["support", "support_count", "size", "items"] | None = None,
+                 sort_order: Literal["asc", "desc"] = "desc",
                  limit: int = Query(default=100, ge=1, le=500), offset: int = Query(default=0, ge=0)):
         report = load_insight(settings.artifact_dir, "rules", settings.database_path)
         if "itemsets" not in report:
             raise HTTPException(503, "Rebuild only mining outputs: fulfilliq build-insights --module rules")
         rows = [row for row in report["itemsets"] if row["support"] >= min_support]
+        if sort_by == "support":
+            rows.sort(key=lambda row: (row["support"], row["support_count"], row["items"]), reverse=sort_order == "desc")
+        elif sort_by == "support_count":
+            rows.sort(key=lambda row: (row["support_count"], row["support"], row["items"]), reverse=sort_order == "desc")
+        elif sort_by == "size":
+            rows.sort(key=lambda row: (len(row["items"]), row["support"], row["items"]), reverse=sort_order == "desc")
+        elif sort_by == "items":
+            rows.sort(key=lambda row: tuple(row["items"]), reverse=sort_order == "desc")
         return {**page(rows, limit, offset), "algorithm": algorithm,
+                "algorithms": report["algorithms"], "algorithms_agree": report["algorithms_agree"],
+                "transaction_count": report["transaction_count"], "mining_parameters": report["parameters"],
+                "created_at_utc": report.get("created_at_utc"),
                 "interpretation": "Identical itemsets/support verified for Apriori and FP-Growth "
                 "during offline mining; one shared representation is stored. Full-history associations."}
 

@@ -111,6 +111,8 @@ def intelligence_router(settings: Settings) -> APIRouter:
         min_confidence: float = Query(default=0, ge=0, le=1),
         min_lift: float = Query(default=0, ge=0),
         antecedent_contains: str | None = Query(default=None, max_length=100),
+        sort_by: Literal["lift", "confidence", "support"] = "lift",
+        sort_order: Literal["asc", "desc"] = "desc",
         limit: Limit = 100,
         offset: Offset = 0,
     ):
@@ -126,7 +128,10 @@ def intelligence_router(settings: Settings) -> APIRouter:
                 or any(antecedent_contains in value for value in row["antecedents"])
             )
         ]
-        return {**report, **page(rows, limit, offset)}
+        rows.sort(key=lambda row: (row[sort_by], row["support"], row["antecedents"]),
+                  reverse=sort_order == "desc")
+        return {**report, "mining_parameters": report.get("parameters", {}),
+                "created_at_utc": report.get("created_at_utc"), **page(rows, limit, offset)}
 
     @router.get("/mining/anomalies", response_model=AnomaliesResponse, tags=["Data mining"])
     def anomalies(
@@ -158,7 +163,7 @@ def intelligence_router(settings: Settings) -> APIRouter:
             if (segment_id is None or row["segment_id"] == segment_id)
             and (seller_state is None or row["features"]["seller_state"] == seller_state)
         ]
-        return {**report, **page(rows, limit, offset)}
+        return {**report, "feature_names": report.get("features", []), **page(rows, limit, offset)}
 
     @router.get("/sellers/{seller_id}/insights", response_model=SellerInsights, tags=["Sellers"])
     def seller_insights(seller_id: str):

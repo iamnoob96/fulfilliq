@@ -92,6 +92,8 @@ class AlgorithmBenchmark(BaseModel):
 
 class RulesResponse(Page[AssociationRule]):
     transaction_count: int
+    mining_parameters: dict[str, float | int] = Field(default_factory=dict)
+    created_at_utc: str | None = None
     algorithms_agree: bool
     algorithms: dict[str, AlgorithmBenchmark]
     target_definition: str
@@ -117,6 +119,10 @@ class AnomaliesResponse(Page[AnomalyRecord]):
     interpretation: str
     counts: dict[str, int]
     contamination: float
+    order_threshold: float | None = None
+    reference_order_count: int | None = None
+    global_late_rate: float | None = None
+    min_orders: int | None = None
 
 
 class SellerFeatures(BaseModel):
@@ -153,6 +159,8 @@ class SegmentsResponse(Page[SellerSegment]):
     silhouette: float
     mean_stability_ari: float
     excluded_low_volume_sellers: int
+    feature_names: list[str] = Field(default_factory=list)
+    min_orders: int = 0
     segments: list[SegmentSummary]
     interpretation: str
 

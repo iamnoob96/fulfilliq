@@ -195,3 +195,94 @@ def test_durable_cohort_progress_survives_browser_restart_and_opens_investigatio
     opened = restarted.session_state["cohort_open"][1]
     assert console_backend.get(f"/api/v1/orders/{opened}").json()["review"]["notes"] == "Synthetic cohort investigation"
     assert store.get(identifier)["processed_count"] == 6
+
+
+def test_mining_explorer_modes_filters_and_drilldowns(console_backend):
+    from streamlit.testing.v1 import AppTest
+
+    from fulfilliq.analytics.store import save_insight
+
+    settings = console_backend.application_settings
+    rules = {
+        "target_definition": "actual_delivery_timestamp > estimated_delivery_timestamp",
+        "transaction_count": 100,
+        "parameters": {"min_support": 0.01, "min_confidence": 0.15, "min_lift": 1.1, "max_length": 3},
+        "algorithms": {"apriori": {"seconds": 0.12, "frequent_itemsets": 2},
+                       "fp_growth": {"seconds": 0.08, "frequent_itemsets": 2}},
+        "algorithms_agree": True,
+        "itemsets": [{"items": ["customer_state=RJ"], "support": 0.5, "support_count": 50},
+                     {"items": ["seller_state=SP", "outcome=late"], "support": 0.2, "support_count": 20}],
+        "rules": [{"antecedents": ["customer_state=RJ"], "consequents": ["outcome=late"],
+                   "support": 0.2, "confidence": 0.4, "lift": 2.0, "leverage": 0.1, "support_count": 20},
+                  {"antecedents": ["seller_state=SP"], "consequents": ["outcome=late"],
+                   "support": 0.1, "confidence": 0.2, "lift": 1.2, "leverage": 0.01, "support_count": 10}],
+        "interpretation": "Saved full-history rule snapshot.",
+    }
+    save_insight(settings.artifact_dir, "rules", rules, settings.database_path)
+    features = {"order_volume": 25, "eligible_outcomes": 20, "late_orders": 2, "late_rate": 0.1,
+                "median_fulfillment_days": 3.0, "mean_freight": 12.0, "mean_distance_km": 100.0,
+                "mean_order_value": 50.0, "category_diversity": 2, "seller_state": "SP"}
+    profiles = [{"segment_id": 0, "name": "Segment 0", "sellers": 1, "medoid_seller_id": "s1",
+                 "medians": {"order_volume": 25.0, "late_rate": 0.1, "median_fulfillment_days": 3.0,
+                             "mean_freight": 12.0, "mean_distance_km": 100.0,
+                             "mean_order_value": 50.0, "category_diversity": 2.0}}]
+    assignments = [{"seller_id": "s1", "segment_id": 0, "segment_name": "Segment 0", "features": features}]
+    save_insight(settings.artifact_dir, "segments", {
+        "method": "K-Medoids, Manhattan", "features": list(features), "min_orders": 10, "selected_k": 1,
+        "silhouette": 0.3, "mean_stability_ari": 0.7, "excluded_low_volume_sellers": 1,
+        "segments": profiles, "assignments": assignments, "interpretation": "Descriptive historical groups."},
+        settings.database_path)
+    anomaly_rows = [
+        {"kind": "order", "entity_id": "o6", "score": 0.8, "threshold": 0.6, "region": "RJ",
+         "reasons": ["unusual freight"], "observed_features": {"freight_value": 99.0}},
+        {"kind": "seller", "entity_id": "s1", "score": 0.3, "threshold": 0.2,
+         "eligible_outcomes": 20, "late_orders": 2, "late_rate": 0.1, "wilson_interval": [0.02, 0.25],
+         "reasons": ["historical screening"]},
+        {"kind": "region", "entity_id": "RJ", "score": 0.3, "threshold": 0.2,
+         "eligible_outcomes": 20, "late_orders": 2, "late_rate": 0.1, "wilson_interval": [0.02, 0.25],
+         "reasons": ["historical screening"]},
+        {"kind": "seller_fulfillment", "entity_id": "s1", "score": 9.0, "threshold": 5.0,
+         "reasons": ["long approval-to-carrier"]},
+    ]
+    save_insight(settings.artifact_dir, "anomalies", {
+        "method": "Isolation Forest; Wilson; robust duration", "contamination": 0.02, "min_orders": 20,
+        "order_threshold": 0.6, "reference_order_count": 100, "global_late_rate": 0.1,
+        "counts": {"order": 1, "seller": 1, "region": 1, "seller_fulfillment": 1},
+        "anomalies": anomaly_rows, "interpretation": "Historical investigation candidates."}, settings.database_path)
+
+    response = console_backend.get("/api/v1/mining/itemsets", params={"algorithm": "apriori", "min_support": 0.3})
+    assert response.status_code == 200
+    assert response.json()["total"] == 1
+    assert response.json()["algorithms"]["apriori"]["seconds"] == 0.12
+    filtered = console_backend.get("/api/v1/mining/association-rules", params={
+        "min_confidence": 0.3, "antecedent_contains": "customer_state", "sort_by": "confidence"})
+    assert [row["antecedents"] for row in filtered.json()["items"]] == [["customer_state=RJ"]]
+    assert console_backend.get("/api/v1/mining/anomalies", params={"kind": "region"}).json()["total"] == 1
+
+    entry = Path(__file__).resolve().parents[1] / "src/fulfilliq/console/app.py"
+    app = AppTest.from_file(entry).run(timeout=30)
+    app.sidebar.radio[0].set_value("Data mining").run(timeout=30)
+    assert not app.exception and not app.error
+    mode = next(box for box in app.selectbox if box.label == "Mining algorithm view")
+    next_box = mode.set_value("Apriori").run(timeout=30)
+    assert any(metric.label == "Selected algorithm" and metric.value == "Apriori" for metric in next_box.metric)
+    next_box = next(box for box in next_box.selectbox if box.label == "Mining algorithm view").set_value("FP-Growth").run(timeout=30)
+    assert any(metric.label == "Selected algorithm" and metric.value == "FP-Growth" for metric in next_box.metric)
+    assert any("verified against Apriori" in caption.value for caption in next_box.caption)
+    next_box = next(box for box in next_box.selectbox if box.label == "Mining algorithm view").set_value("Compare Both").run(timeout=30)
+    assert any(metric.label == "Verified parity" and metric.value == "Yes" for metric in next_box.metric)
+    assert next_box.get("plotly_chart")
+    item_support = next(box for box in next_box.number_input if box.label == "Minimum displayed support · itemsets")
+    next_box = item_support.set_value(0.3).run(timeout=30)
+    assert any("1 saved matches" in caption.value for caption in next_box.caption)
+    confidence = next(box for box in next_box.number_input if box.label == "Minimum confidence")
+    next_box = confidence.set_value(0.3).run(timeout=30)
+    assert any("1 saved rules match" in caption.value for caption in next_box.caption)
+    assert not next_box.exception and not next_box.error
+
+    anomaly = next(box for box in next_box.selectbox if box.label == "Anomaly type")
+    next_box = anomaly.set_value("Unusual regions").run(timeout=30)
+    assert any(header.value == "Unusual regions" for header in next_box.subheader)
+    assert any(metric.label == "Matching historical flags" and metric.value == "1" for metric in next_box.metric)
+    assert not next_box.exception and not next_box.error
+    assert not next_box.exception

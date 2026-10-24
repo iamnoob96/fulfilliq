@@ -39,6 +39,16 @@ def chart(rows, x, y, title, *, kind="bar", **kwargs):
     st.plotly_chart(figure, width="stretch")
 
 
+def itemset_label(token):
+    names = {"customer_state": "Customer state", "seller_state": "Seller state",
+             "category": "Product category", "distance_km": "Shipping distance",
+             "items_value": "Order value", "freight_value": "Freight cost",
+             "total_weight_g": "Product weight", "seller_history_late_rate": "Seller history",
+             "outcome": "Delivery outcome"}
+    field, _, value = token.partition("=")
+    return f"{names.get(field, field.replace('_', ' ').title())}: {value}"
+
+
 def performance(params, group="region", limit=100):
     return client.get("/analytics/delivery-performance", **params,
                       group_by=group, min_orders=1, limit=limit)
@@ -171,6 +181,12 @@ def show_orders(params, options):
             "they never enter checkout features. This is not independent model validation.")
     if message := st.session_state.pop("review_flash", None):
         st.success(message)
+    if identifier := st.session_state.get("open_order_details"):
+        if st.button("Return to order queue", key="return_from_anomaly_order"):
+            st.session_state.pop("open_order_details", None)
+            st.rerun()
+        order_details(identifier)
+        return
     cols = st.columns(3)
     with cols[0]:
         status = remembered_select("Workflow filter", ["all"] + STATUSES, "browse_status")
@@ -319,39 +335,229 @@ def show_seller(options):
 
 
 def show_mining():
-    st.caption("Full-history exploratory snapshots. Shared orders and lexical evidence do not prove causes.")
+    st.subheader("Data Mining Explorer")
+    st.caption("Discover historical associations, seller groups, and unusual logistics patterns. "
+               "Mining snapshots use the full eligible history; sidebar date, seller, region, and category filters "
+               "do not rebuild or filter them. These associations are not causal findings.")
     tab_rules, tab_segments, tab_anomalies = st.tabs(["Apriori & FP-Growth", "Seller clustering", "Anomalies"])
     with tab_rules:
-        st.write("Apriori enumerates frequent candidates; FP-Growth compresses transactions into a prefix tree. "
-                 "Both mine identical discretized baskets and verify matching supports offline.")
-        algorithm = st.selectbox("Mining algorithm", ["apriori", "fp_growth"])
-        support = st.number_input("Minimum displayed support", min_value=0.0, max_value=1.0, value=0.01, step=0.01)
-        rules = client.get("/mining/association-rules", min_support=support)
-        st.caption(rules["interpretation"])
-        table([{"algorithm": name, **value} for name, value in rules["algorithms"].items()], "algorithm_comparison")
-        st.markdown("**Rules with late-delivery consequent**")
-        table(rules["items"], "association_rules", export=True)
-        st.caption("Confidence = subgroup late rate; lift compares it to overall late prevalence.")
-        st.markdown("**Frequent itemsets**")
-        itemsets = client.get("/mining/itemsets", algorithm=algorithm, min_support=support, limit=500)
-        st.caption(f"Showing {len(itemsets['items'])} of {itemsets['total']} itemsets.")
-        table(itemsets["items"], "frequent_itemsets", export=True)
+        rules = client.get("/mining/association-rules", limit=1)
+        saved = rules.get("mining_parameters", {})
+        choice = st.selectbox("Mining algorithm view", ["Apriori", "FP-Growth", "Compare Both"],
+                              key="mining_algorithm_view")
+        algorithm = {"Apriori": "apriori", "FP-Growth": "fp_growth"}.get(choice, "apriori")
+        stats = rules.get("algorithms", {})
+        if choice == "Compare Both":
+            left, right, match = st.columns(3)
+            left.metric("Apriori", f"{stats.get('apriori', {}).get('seconds', 0):.3f} s",
+                        f"{stats.get('apriori', {}).get('frequent_itemsets', 0):,} itemsets")
+            right.metric("FP-Growth", f"{stats.get('fp_growth', {}).get('seconds', 0):.3f} s",
+                         f"{stats.get('fp_growth', {}).get('frequent_itemsets', 0):,} itemsets")
+            match.metric("Verified parity", "Yes" if rules["algorithms_agree"] else "No")
+            chart([{"algorithm": name.replace("_", "-"), "seconds": value["seconds"]}
+                   for name, value in stats.items()], "algorithm", "seconds",
+                  "Saved mining runtime · one historical run")
+            st.caption("Apriori generates and prunes candidate itemsets. FP-Growth compresses transactions "
+                       "into an FP-tree and mines patterns without candidate generation. On the same baskets "
+                       "and support threshold, their itemsets and supports should match; timings are one saved "
+                       "measurement, not a performance guarantee.")
+        else:
+            selected = stats.get(algorithm, {})
+            cols = st.columns(3)
+            cols[0].metric("Selected algorithm", choice)
+            cols[1].metric("Saved execution time", f"{selected.get('seconds', 0):.3f} s")
+            cols[2].metric("Frequent itemsets", f"{selected.get('frequent_itemsets', 0):,}")
+            if algorithm == "apriori":
+                st.caption("Apriori builds candidate itemsets level by level and prunes candidates whose "
+                           "subsets are not frequent. The shared saved results were verified against FP-Growth.")
+            else:
+                st.caption("FP-Growth compresses transactions into an FP-tree and mines conditional patterns. "
+                           "The shared saved results were verified against Apriori.")
+        if rules["algorithms_agree"]:
+            st.success(f"Apriori and FP-Growth agree on the saved itemsets and supports across "
+                       f"{rules['transaction_count']:,} eligible transactions.")
+        else:
+            st.error("The saved report records disagreement between Apriori and FP-Growth. Treat the mined "
+                     "results as unverified until the offline report is rebuilt and checked.")
+        st.caption(f"Snapshot {rules.get('created_at_utc') or 'timestamp unavailable'} · saved minimum support "
+                   f"{saved.get('min_support', 0):.3g}, confidence {saved.get('min_confidence', 0):.3g}, "
+                   f"lift {saved.get('min_lift', 0):.3g}. Changing display filters never reruns mining.")
+
+        st.markdown("#### Frequent itemsets")
+        item_support = st.number_input("Minimum displayed support · itemsets", min_value=0.0, max_value=1.0,
+                                       value=float(saved.get("min_support", 0.01)), step=0.005,
+                                       format="%.3f", key="mining_itemset_support")
+        item_sort = st.selectbox("Sort itemsets by", ["Support", "Support count", "Itemset size", "Items"],
+                                 key="mining_itemset_sort")
+        item_order = st.selectbox("Itemset sort order", ["Descending", "Ascending"], key="mining_itemset_order")
+        if item_support < float(saved.get("min_support", 0)):
+            st.warning("This is below the snapshot's original support threshold. Lower-support itemsets were "
+                       "never saved, so this view cannot recover them; run the offline mining command to do so.")
+        item_limit = st.selectbox("Itemsets per page", [25, 50, 100], index=1, key="mining_itemset_limit")
+        item_params = {"algorithm": algorithm, "min_support": item_support, "limit": item_limit,
+                       "sort_by": {"Support": "support", "Support count": "support_count",
+                                   "Itemset size": "size", "Items": "items"}[item_sort],
+                       "sort_order": "desc" if item_order == "Descending" else "asc"}
+        itemsets = client.get("/mining/itemsets", **item_params,
+                              offset=(st.session_state.get("mining_itemset_page", 1)-1)*item_limit)
+        st.caption(f"{choice} context · {itemsets['total']:,} saved matches · page shows "
+                   f"{len(itemsets['items'])} rows. The rows are shared and verified, not reminted per algorithm.")
+        itemset_rows = [{**row, "items_display": " · ".join(itemset_label(token) for token in row["items"]),
+                         "itemset_size": len(row["items"])} for row in itemsets["items"]]
+        chart(itemset_rows[:25], "support", "items_display", "Frequent itemset support · current page",
+              orientation="h")
+        item_pages = max(1, (itemsets["total"] + item_limit - 1)//item_limit)
+        if st.session_state.get("mining_itemset_page", 1) > item_pages:
+            st.session_state["mining_itemset_page"] = item_pages
+        st.number_input("Itemset page", min_value=1, max_value=item_pages, step=1, key="mining_itemset_page")
+        table(itemset_rows, "frequent_itemsets", export=True)
+
+        st.markdown("#### Association rules for late delivery")
+        rule_cols = st.columns(4)
+        rule_support = rule_cols[0].number_input("Minimum support · rules", min_value=0.0, max_value=1.0,
+                          value=float(saved.get("min_support", 0.01)), step=0.005, format="%.3f", key="mining_rule_support")
+        rule_confidence = rule_cols[1].number_input("Minimum confidence", min_value=0.0, max_value=1.0,
+                          value=float(saved.get("min_confidence", 0.15)), step=0.05, format="%.3f", key="mining_rule_confidence")
+        rule_lift = rule_cols[2].number_input("Minimum lift", min_value=0.0, max_value=20.0,
+                          value=float(saved.get("min_lift", 1.1)), step=0.1, format="%.2f", key="mining_rule_lift")
+        antecedent = rule_cols[3].text_input("Antecedent attribute or value", key="mining_rule_antecedent")
+        rule_sort = st.selectbox("Sort rules by", ["Highest lift", "Highest confidence", "Highest support"],
+                                 key="mining_rule_sort")
+        for field, value in (("support", rule_support), ("confidence", rule_confidence), ("lift", rule_lift)):
+            if value < float(saved.get("min_" + field, 0)):
+                st.warning(f"The requested minimum {field} is below the saved mining threshold. "
+                           "Patterns excluded from the snapshot cannot be recovered here.")
+        rule_limit = st.selectbox("Rules per page", [25, 50, 100], index=1, key="mining_rule_limit")
+        rule_params = {"min_support": rule_support, "min_confidence": rule_confidence, "min_lift": rule_lift,
+                       "antecedent_contains": antecedent or None, "sort_by": {"Highest lift": "lift",
+                       "Highest confidence": "confidence", "Highest support": "support"}[rule_sort],
+                       "limit": rule_limit}
+        rule_page = st.session_state.get("mining_rule_page", 1)
+        rule_rows = client.get("/mining/association-rules", **rule_params,
+                               offset=(rule_page-1)*rule_limit)
+        st.caption("Support is the fraction of all eligible transactions containing the full rule. Confidence "
+                   "is the fraction matching the antecedent that also match the consequent; for outcome=late, "
+                   "it is the historical late rate in that subgroup. Lift compares this association with the "
+                   "overall late prevalence. These are associations, not causes.")
+        st.caption(f"{rule_rows['total']:,} saved rules match these display filters.")
+        chart([{"rule": " AND ".join(itemset_label(value) for value in row["antecedents"]), **row}
+               for row in rule_rows["items"][:15]], "lift", "rule", "Highest-lift matching rules", orientation="h")
+        rule_pages = max(1, (rule_rows["total"] + rule_limit - 1)//rule_limit)
+        if rule_page > rule_pages:
+            st.session_state["mining_rule_page"] = rule_pages
+            st.rerun()
+        st.number_input("Rule page", min_value=1, max_value=rule_pages, step=1, key="mining_rule_page")
+        table(rule_rows["items"], "association_rules", export=True)
     with tab_segments:
-        segments = client.get("/sellers/segments", limit=100)
+        segments = client.get("/sellers/segments", limit=1)
+        cols = st.columns(4)
+        cols[0].metric("Seller segments", segments["selected_k"])
+        cols[1].metric("Sellers included", f"{segments['total']:,}")
+        cols[2].metric("Low-volume sellers excluded", f"{segments['excluded_low_volume_sellers']:,}")
+        cols[3].metric("Silhouette", f"{segments['silhouette']:.3f}",
+                       f"Stability ARI {segments['mean_stability_ari']:.3f}")
         st.write(segments["method"])
-        st.caption(segments["interpretation"])
-        chart(segments["segments"], "name", "sellers", "Seller segment sizes")
-        table(segments["segments"], "segments", export=True)
-        st.caption(f"Silhouette {segments['silhouette']:.3f}; stability ARI {segments['mean_stability_ari']:.3f}; "
-                   f"{segments['excluded_low_volume_sellers']} low-volume sellers excluded.")
+        st.caption(segments["interpretation"] + " K-Medoids assigns sellers to the nearest observed medoid; "
+                   "a medoid is an actual seller near the center of its group. Silhouette summarizes separation "
+                   "and cohesion, while resample ARI summarizes agreement of cluster assignments across samples.")
+        chart(segments["segments"], "name", "sellers", "Historical seller segment sizes")
+        profile_rows = [{"segment": row["name"], "sellers": row["sellers"], **row["medians"]}
+                        for row in segments["segments"]]
+        table(profile_rows, "seller_segment_profiles", export=True)
+        numeric_features = [key for key in segments.get("feature_names", [])
+                            if key in {"order_volume", "late_rate", "median_fulfillment_days", "mean_freight",
+                                       "mean_distance_km", "mean_order_value", "category_diversity"}]
+        if numeric_features and profile_rows:
+            feature = st.selectbox("Compare cluster medians", numeric_features, key="segment_profile_feature")
+            chart([{"segment": row["segment"], feature: row.get(feature)} for row in profile_rows],
+                  "segment", feature, f"Seller segments · median {feature.replace('_', ' ')}")
+        if segments["segments"]:
+            segment_names = {row["name"]: row["segment_id"] for row in segments["segments"]}
+            chosen_segment = st.selectbox("Explore sellers in segment", list(segment_names), key="seller_segment_choice")
+            seller_limit = st.selectbox("Sellers per page", [25, 50, 100], key="segment_seller_limit")
+            selected_id = segment_names[chosen_segment]
+            seller_page_num = st.session_state.get("segment_seller_page", 1)
+            assignments = client.get("/sellers/segments", segment_id=selected_id, limit=seller_limit,
+                                     offset=(seller_page_num-1)*seller_limit)
+            seller_pages = max(1, (assignments["total"] + seller_limit - 1)//seller_limit)
+            if seller_page_num > seller_pages:
+                st.session_state["segment_seller_page"] = seller_pages
+                st.rerun()
+            st.caption(f"Segment {selected_id} · showing {len(assignments['items'])} of "
+                       f"{assignments['total']:,} sellers. Compare these values with the segment medians above.")
+            st.number_input("Seller page", min_value=1, max_value=seller_pages, step=1, key="segment_seller_page")
+            table(assignments["items"], "segment_sellers", export=True)
+            if assignments["items"]:
+                seller_choices = {row["seller_id"]: row for row in assignments["items"]}
+                seller_id = st.selectbox("Inspect seller on this page", list(seller_choices), key="segment_seller_choice")
+                seller_features = seller_choices[seller_id]["features"]
+                profile = next(row for row in segments["segments"] if row["segment_id"] == selected_id)
+                comparison = [{"feature": feature.replace("_", " "), "seller": seller_features.get(feature),
+                               "segment median": profile["medians"].get(feature)}
+                              for feature in numeric_features if feature in seller_features]
+                table(comparison, "seller_vs_segment_median")
+                if st.button("Open in Seller Intelligence", key="open_segment_seller"):
+                    st.session_state["seller_focus"] = seller_id
+                    st.session_state["next_navigation"] = "Seller intelligence"
+                    st.rerun()
     with tab_anomalies:
-        st.write("Isolation Forest screens unusual shipping features; robust statistical thresholds screen "
-                 "historical seller/region rates and durations. These are investigation signals.")
-        kind = st.selectbox("Anomaly entity", ["order", "seller", "region", "seller_fulfillment"])
-        result = client.get("/mining/anomalies", kind=kind, limit=100)
+        labels = {"Unusual orders": "order", "Unusual sellers": "seller", "Unusual regions": "region",
+                  "Slow fulfillment sellers": "seller_fulfillment"}
+        label = st.selectbox("Anomaly type", list(labels), key="mining_anomaly_type")
+        kind = labels[label]
+        result = client.get("/mining/anomalies", kind=kind, limit=50,
+                            offset=(st.session_state.get("mining_anomaly_page", 1)-1)*50)
+        total = result["counts"].get(kind, 0)
+        st.subheader(label)
+        st.metric("Matching historical flags", f"{total:,}")
+        if kind == "order":
+            st.caption(f"Isolation Forest order-characteristic score; saved threshold {result['order_threshold']:.4f}. "
+                       "Higher scores are more unusual within this historical reference distribution.")
+        elif kind in {"seller", "region"}:
+            st.caption("Wilson interval screen: the group's 95% lower bound exceeds the global 95% late-rate "
+                       "upper bound. The score is a lower bound, not a shared anomaly scale.")
+        else:
+            st.caption("Robust duration screen: median approval-to-carrier time exceeds the historical median "
+                       "by three scaled median absolute deviations.")
         st.caption(result["interpretation"])
-        table(result["items"], "anomalies", export=True)
-        st.caption(f"Showing first {len(result['items'])} of {result['total']} observations.")
+        rows = result["items"]
+        if kind == "order":
+            rows = [{"order_id": row["entity_id"], "score": row["score"], "threshold": row["threshold"],
+                     "customer_region": row.get("region"), "reasons": row["reasons"],
+                     "observed_features": row.get("observed_features")} for row in rows]
+        elif kind in {"seller", "region"}:
+            rows = [{"entity_id": row["entity_id"], "late_rate": row.get("late_rate"),
+                     "eligible_outcomes": row.get("eligible_outcomes"), "late_orders": row.get("late_orders"),
+                     "screen_score": row["score"], "screen_threshold": row["threshold"],
+                     "wilson_interval": row.get("wilson_interval"), "reasons": row["reasons"]} for row in rows]
+        table(rows, "anomalies_" + kind, export=True)
+        pages = max(1, (total + 49)//50)
+        if st.session_state.get("mining_anomaly_page", 1) > pages:
+            st.session_state["mining_anomaly_page"] = pages
+            st.rerun()
+        st.number_input("Anomaly page", min_value=1, max_value=pages, step=1, key="mining_anomaly_page")
+        if result["items"]:
+            if kind == "order":
+                identifiers = [row["entity_id"] for row in result["items"]]
+                order_id = st.selectbox("Investigate unusual order", identifiers, key="anomaly_order_id")
+                if st.button("Open order investigation", key="open_anomaly_order"):
+                    st.session_state["open_order_details"] = order_id
+                    st.session_state["next_navigation"] = "Orders & review queue"
+                    st.rerun()
+            elif kind in {"seller", "seller_fulfillment"}:
+                sellers = [row["entity_id"] for row in result["items"]]
+                seller_id = st.selectbox("Inspect unusual seller", sellers, key="anomaly_seller_id")
+                if st.button("Open seller intelligence", key="open_anomaly_seller"):
+                    st.session_state["seller_focus"] = seller_id
+                    st.session_state["next_navigation"] = "Seller intelligence"
+                    st.rerun()
+            elif kind == "region":
+                regions = [row["entity_id"] for row in result["items"]]
+                region = st.selectbox("Inspect unusual customer region", regions, key="anomaly_region_id")
+                if st.button("Open regional logistics", key="open_anomaly_region"):
+                    st.session_state["filter_region"] = region
+                    st.session_state["next_navigation"] = "Logistics"
+                    st.rerun()
 
 
 def show_reviews(params):
