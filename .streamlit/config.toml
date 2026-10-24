@@ -1,0 +1,37 @@
+[server]
+enableStaticServing = true
+
+[theme]
+base = "light"
+primaryColor = "#DC6D18"
+backgroundColor = "#FFF4E4"
+secondaryBackgroundColor = "#F8E0C9"
+textColor = "#2B1A12"
+font = "DM Sans"
+headingFont = "Fraunces"
+codeFont = "IBM Plex Mono"
+baseFontSize = 16
+baseRadius = "small"
+buttonRadius = "small"
+borderColor = "#B1AA81"
+showWidgetBorder = true
+dataframeHeaderBackgroundColor = "#F8E0C9"
+chartCategoricalColors = ["#DC6D18", "#B1AA81", "#2B1A12", "#F8E0C9"]
+
+[[theme.fontFaces]]
+family = "Fraunces"
+url = "app/static/fonts/fraunces.ttf"
+weight = "100 900"
+[[theme.fontFaces]]
+family = "DM Sans"
+url = "app/static/fonts/dmsans.ttf"
+weight = "100 900"
+[[theme.fontFaces]]
+family = "IBM Plex Mono"
+url = "app/static/fonts/ibmplexmono.ttf"
+weight = "400"
+
+[theme.sidebar]
+backgroundColor = "#F8E0C9"
+secondaryBackgroundColor = "#FFF4E4"
+
