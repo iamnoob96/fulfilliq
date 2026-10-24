@@ -1,0 +1,81 @@
+{
+  "total_orders": 99441,
+  "eligible_outcomes": 96470,
+  "late_orders": 7826,
+  "active_sellers": 3095,
+  "model_version": "20261024T031015-f87ea646",
+  "warehouse_and_model_unchanged": true,
+  "single_and_replay_predictions_identical": true,
+  "review_restart_persistence": true,
+  "read_only_api_workflows_checked": 11,
+  "r_available": true,
+  "sha256": {
+    "warehouse": "d7878837e192bb50ac38f3e62a10318e7982de5a0c21eef5beca6a852650c1ab",
+    "pointer": "d5001e7551c41192422a0225c56473c9fa3adc131411191d2a35894e0498047f",
+    "model": "b21b7cceb3d58cd3b259de1139a038d4519caaeebfa1865b025335b857e61af0"
+  },
+  "console": {
+    "pages_rendered": [
+      "Overview",
+      "Orders & review queue",
+      "Logistics",
+      "Seller intelligence",
+      "Data mining",
+      "Review intelligence",
+      "Model evaluation",
+      "Reports & R"
+    ],
+    "historical_orders": 99441,
+    "candidate_predictions": 22,
+    "r_available": true
+  },
+  "r": {
+    "transaction_count": 5000,
+    "plot_order_count": 96470,
+    "parameters": {
+      "min_support": 0.01,
+      "min_confidence": 0.15,
+      "min_lift": 1.1,
+      "max_length": 3
+    },
+    "comparison": {
+      "rules_compared": 1,
+      "all_rules_agree": true,
+      "maximum_absolute_metric_error": 2.220446049250313e-15,
+      "tolerance": 1e-08
+    },
+    "r_session": {
+      "r_version": "R version 4.5.2 (2025-10-31)",
+      "packages": {
+        "arules": "1.7.15",
+        "ggplot2": "4.0.3",
+        "jsonlite": "2.0.0"
+      },
+      "transaction_count": 5000,
+      "rules": 1,
+      "executed_at_utc": "2026-10-24 05:20:05 UTC"
+    },
+    "input_sha256": {
+      "transactions.csv": "ef9a36e625ef207d709669857551eb06fcaa4ad38008bb7c494417bb59bc7063",
+      "python-rules.json": "cf1ff27b76b2fc4bda0c178bf6c78237c965d95d3e76318991f3f56f71b14b9d",
+      "logistics.csv": "b0610775f39ba6658dc90ffa4de96cd504c3b2a4bca2bf27946ac8dce0a0cc8b",
+      "sellers.csv": "e725e7a347e6faedc505d6f3b71642e5d0154320af7350f744b51869ff28dae6",
+      "regions.csv": "db5b815b945b0a8a338032b75c97223a54f2444ca47548379b44cd7a96930ce1"
+    },
+    "rule_rows": [
+      {
+        "antecedents": "customer_state=RJ|seller_state=SP",
+        "consequents": "outcome=late",
+        "support": "0.0118",
+        "confidence": "0.150127226463104",
+        "coverage": "0.0786",
+        "lift": "1.78722888646553",
+        "count": "59"
+      }
+    ]
+  },
+  "api_paths": 25,
+  "automated_tests_passed": 139,
+  "verification_date_utc": "2026-10-24",
+  "scope": "Historical application integration; no delay model fitting, tuning, recalibration or promotion."
+}

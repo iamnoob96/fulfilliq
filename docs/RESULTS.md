@@ -171,3 +171,32 @@ Sentiment labels are noisy review stars, not verified logistics sentiment. Theme
 ## Reproduction
 
 Run `fulfilliq train`, `fulfilliq build-insights`, and `fulfilliq export-report` against the original sources and locked dependencies. Seeds are fixed; UUIDs, timestamps and runtime timings vary. Preserve full precision in the JSON when comparing repeated experiments. Raw data, record-level reports and binaries stay outside Git.
+
+## Application integration — 2026-10-24
+
+The internal Streamlit/Plotly operations console integrates eight pages with FastAPI:
+warehouse overview, historical replay/review queue, logistics, sellers, mining, review
+intelligence, read-only model evidence, and operational/R reports. Review decisions
+persist in an independent SQLite database with token-protected revision-checked writes.
+Real-data checks confirmed 99,441 order totals, 96,470 eligible delivered outcomes,
+7,826 exact-time late orders and 3,095 active sellers. All eight pages rendered, 22 of
+50 recent candidate orders could be reconstructed/scored, and unavailable records were
+reported honestly. Direct checkout and replay scoring agreed; temporary workflow state
+survived API recreation. Warehouse, model pointer and model binary SHA-256 values stayed
+unchanged. The full regression suite passed **139 tests** with the console extra.
+
+Optional R execution used R 4.5.2, arules 1.7.15, ggplot2 4.0.3 and jsonlite 2.0.0.
+On 5,000 deterministic evenly spaced historical transactions, Python and R retained the
+same one late-delivery rule at support >= .01, confidence >= .15, lift >= 1.1, max length
+3. The SP-seller/RJ-customer rule had support **.0118**, confidence **.1501272265**, lift
+**1.7872288865**, and support count **59**. Maximum cross-language metric difference was
+**2.220446049250313e-15**. These subset figures differ from full-dataset mining because
+the input population differs; this is reproducibility evidence, not a new causal or
+predictive improvement claim. Both Python algorithms still agreed on all **2,191**
+full-history frequent itemsets. Four R plots used real logistics inputs, including all
+96,470 valid delivered orders for delivery plots.
+
+The active delivery model was not optimized, refitted, recalibrated or promoted. Its original
+version **20261024T031015-f87ea646** and its previously reported limitations remain.
+See the [reproduction evidence](results/application-integration-20261024.json),
+[application walkthrough](OPERATIONS_CONSOLE.md) and [R instructions](../r_analysis/README.md).

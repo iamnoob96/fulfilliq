@@ -1,11 +1,37 @@
 # FulfillIQ
 
-An internal **e-commerce logistics intelligence backend**, built for a university Data
+An internal **e-commerce logistics intelligence application**, built for a university Data
 Mining project. It uses the nine original Olist CSVs to predict purchase-time delivery
 risk, investigate historical fulfillment, mine delay associations, segment sellers,
 screen unusual operations and analyze Portuguese reviews. There is no storefront.
 
 Private source repository: [iamnoob96/fulfilliq](https://github.com/iamnoob96/fulfilliq).
+
+## Run the complete application
+
+With the existing warehouse and saved model artifacts:
+
+```sh
+uv sync --locked --extra dev --extra console
+./scripts/start_app.sh
+```
+
+Open **[Operations console](http://127.0.0.1:8501)** or
+[Swagger](http://127.0.0.1:8000/docs). Startup does not train or rebuild anything.
+The Streamlit/Plotly console calls FastAPI for overview KPIs, historical order replay,
+capacity-limited review queues, persistent investigation notes/status, logistics,
+seller peers, mining, Portuguese review evidence, saved model results and report exports.
+Human decisions are stored in a separate SQLite database; historical orders remain
+read-only. Both services bind to loopback and review writes require a shared local token.
+
+See the **[complete setup and demo walkthrough](docs/OPERATIONS_CONSOLE.md)**,
+[actual integration evidence](docs/results/application-integration-20261024.json), and
+[optional R setup](r_analysis/README.md). R arules Apriori is verified against Python
+on identical transactions; ggplot2 generates four historical logistics plots.
+
+Fresh clones need the explicit data and artifact preparation steps below. Existing
+saved artifacts should be reused. Prediction-model optimization and promotion are
+**deferred**; the active model remains unchanged.
 
 ## Implemented capabilities
 
@@ -20,7 +46,7 @@ Private source repository: [iamnoob96/fulfilliq](https://github.com/iamnoob96/fu
   segments with stability checks, and historical Isolation Forest/Wilson/robust screens.
 - Portuguese normalization, lexical delivery themes, TF-IDF interpretation and a
   separate chronological review-score-supervised sentiment model.
-- Thirteen typed FastAPI routes, single/batch scoring, investigation recommendations,
+- Typed FastAPI routes, single/batch scoring, investigation recommendations,
   pagination, explicit failures, structured application logs and Swagger examples.
 
 This is a working **historical offline simulation and local API**. The selected delay
@@ -36,13 +62,13 @@ Use Python **3.11+**; Python 3.11 on macOS/Apple Silicon is verified. Install
 ```sh
 git clone https://github.com/iamnoob96/fulfilliq.git
 cd fulfilliq
-uv sync --locked --extra dev
+uv sync --locked --extra dev --extra console
 source .venv/bin/activate
 ```
 
 The private clone requires your GitHub access. Data/model workflows require no paid APIs,
 cloud accounts, Docker or GPU. `uv.lock` pins tested versions. Alternatively use
-`python3.11 -m venv .venv`, activation, then `python -m pip install -e '.[dev]'`.
+`python3.11 -m venv .venv`, activation, then `python -m pip install -e '.[dev,console]'`.
 Pip uses the ranges in `pyproject.toml` rather than the uv lockfile.
 
 `.env.example` is a reference, not automatically loaded. Export `FULFILIQ_DATA_DIR` and
@@ -236,6 +262,13 @@ engineering; this is exploratory evaluation, not a blind external production ben
 
 ## Tests, artifacts and limitations
 
+The application integration checkpoint passes **139 tests** with the console extra
+installed. All eight console pages were rendered against real Olist data, saved-model
+replay was exercised, Python/R rule metrics matched, and separate workflow persistence
+survived API recreation. The saved delivery model was not refitted or promoted by this assignment.
+Run `uv run --extra dev --extra console pytest -q`; opt-in real-data and console checks
+are documented in [the operations guide](docs/OPERATIONS_CONSOLE.md).
+
 Tests cover ingestion, temporal leakage, calibration, multi-seller aggregation, training,
 persistence, deterministic single/batch scoring, miners, clustering stability, anomalies,
 Portuguese text, provenance, all API routes and a complete nine-table synthetic workflow.
@@ -246,8 +279,8 @@ Raw CSVs, databases, record-level outputs, binaries, environment files and secre
 ignored by Git. `data/processed/fulfilliq.sqlite3` holds sources/marts; `etl_runs` stores
 canonical ingestion reports. `artifacts/delivery/<version>/` stores trusted local models
 and metadata, with atomic `current.json`; `artifacts/insights/` stores provenance-checked
-JSON snapshots; `artifacts/reviews/sentiment.joblib` stores the NLP model. Only small
-aggregate results are committed. Never load untrusted joblib files.
+JSON snapshots; `artifacts/reviews/sentiment.joblib` stores the NLP model. Human review decisions use `data/processed/operations.sqlite3` independently of ETL.
+Only small aggregate results and actual UI screenshots are committed. Never load untrusted joblib files.
 
 Key limits: historical 2016–2018 data, unknown modern-domain validity, approximate event
 observation times, static checkout attributes, unavailable-outcome selection bias, limited

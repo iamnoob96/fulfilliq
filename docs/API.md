@@ -116,3 +116,73 @@ database missing/invalid. This is database readiness, not model readiness. Requi
 or report failures return 503 with recovery instructions; invalid inputs are 422. Changed
 input hashes require retraining/rebuilding, while reingesting identical sources remains
 compatible. Paging beyond the end returns an empty list with the filtered total.
+
+## Operations console workflows
+
+All original routes and fields remain available. `/analytics/overview` additionally
+returns `active_sellers` for the filtered item membership. Exact-time operational
+late rates retain their existing target; legacy mart calendar-day flags are distinct.
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/api/v1/console/options` | Historical date bounds, states, categories and seller IDs |
+| GET | `/api/v1/console/dependencies` | Read-only warehouse/model/insight readiness; no generation |
+| GET | `/api/v1/orders` | Filtered historical candidate pages |
+| GET | `/api/v1/orders/{order_id}` | Placement inputs, products, separate observed milestones, replay eligibility and human state |
+| POST | `/api/v1/orders/replay` | Reconstruct placement-only inputs and score the existing model |
+| PUT | `/api/v1/orders/{order_id}/review` | Persist a human decision in the separate operations database |
+| GET | `/api/v1/mining/itemsets` | Saved frequent itemsets for Apriori or FP-Growth |
+| GET | `/api/v1/reviews/evidence` | Filtered score counts and conservatively redacted lexical examples |
+| GET | `/api/v1/models/research` | Read-only saved temporal/adaptive report summaries |
+| GET | `/api/v1/reports/operations` | Reproducible filtered operational report plus Markdown |
+| GET | `/api/v1/reports/r` | Optional completed R summary and available filenames |
+| GET | `/api/v1/reports/r/files/{filename}` | Known completed CSV/JSON/PNG reports only |
+
+Order listing accepts the existing `seller_id`, `region`, `product_category`,
+`start_date`, `end_date` filters plus `review_status`, `limit` (1–100), `offset` (>=0).
+Dates are inclusive purchase dates. Seller/category filters match the same item
+membership; orders are never multiplied by item count. Listing sorts purchase descending,
+then identifier ascending. No outcomes are included in candidate table rows.
+
+```json
+{"order_ids": ["a-real-warehouse-order-id"], "review_capacity": 1}
+```
+
+Replay accepts 1–100 unique IDs and integer capacity 0–candidate count. Response contains
+`predictions`, descending-risk `review_order_ids`, and per-ID `unavailable` reasons.
+Missing IDs or invalid required checkout attributes are unavailable, never filled with
+invented valid values. Optional missing product/geography inputs retain the existing
+model's missing-value policy. Capacity applies within this submitted batch. Ties preserve
+input order. A completely unavailable batch does not require a model load. A valid batch
+without a compatible saved model returns 503. Prediction responses retain their original
+probability/threshold/category/model-version/rationale/warnings fields.
+
+Human update example (the launcher configures the shared token without displaying it):
+
+```sh
+curl -X PUT http://127.0.0.1:8000/api/v1/orders/ORDER_ID/review \
+  -H "Authorization: Bearer $FULFILIQ_WRITE_TOKEN" -H 'Content-Type: application/json' \
+  --data '{"status":"investigating","notes":"Compare carrier milestones","expected_revision":0}'
+```
+
+Valid states: pending, investigating, reviewed, escalated, resolved. Notes are limited to
+5,000 characters. Revision begins at 0, increments on save, and must match the current
+value: stale updates return **409**. Unknown orders return **404**. Missing/wrong token or
+unconfigured write access returns **403**. Extra fields and invalid states return **422**.
+This endpoint never changes historical orders, milestones, predictions or model artifacts.
+Tokens are process configuration, not returned by any endpoint. Local access is a
+single-team assumption, not production-grade identity/authorization.
+
+Itemsets accept `algorithm=apriori|fp_growth`, support filter, limit (1–500), offset. Both
+algorithms' identical itemsets/support are verified offline and stored once; an old
+snapshot without itemsets returns 503 with the targeted `build-insights --module rules`
+recovery command. Display filtering never re-mines or lowers saved mining thresholds.
+Review evidence accepts seller/state/category and up to 30 examples; examples are
+post-order lexical evidence, not prediction inputs. Date filters do not apply there.
+
+Operational reports apply cohort filters to operational tables. Seller report groups
+require at least five orders and show the first 50 by late rate. Mining findings are
+explicitly full-history snapshots. Equal inputs produce equal report text, including
+saved snapshot provenance. R availability is optional: missing/incompatible outputs
+return 200 with `available=false`, setup guidance and no files. R file paths are restricted
+to known names, and completed outputs must match current warehouse source hashes.
