@@ -57,6 +57,12 @@ def main(argv: list[str] | None = None) -> int:
     insights.add_argument("--min-seller-orders", type=int, default=10)
     insights.add_argument("--contamination", type=float, default=0.02)
     insights.add_argument("--anomaly-min-orders", type=int, default=20)
+    report = commands.add_parser(
+        "export-report", help="Export small aggregate real experiment results"
+    )
+    report.add_argument("--output", type=Path, default=Path("docs/results/experiment.json"))
+    report.add_argument("--data-dir", type=Path, default=settings.data_dir)
+    report.add_argument("--artifact-dir", type=Path, default=settings.artifact_dir)
     args = parser.parse_args(argv)
     configure_logging()
     try:
@@ -117,6 +123,13 @@ def main(argv: list[str] | None = None) -> int:
                 anomaly_min_orders=args.anomaly_min_orders,
             )
             print(json.dumps(result, indent=2, allow_nan=False))
+        elif args.command == "export-report":
+            from fulfilliq.analytics.reporting import export_experiment
+
+            export_experiment(
+                Settings(data_dir=args.data_dir, artifact_dir=args.artifact_dir), args.output
+            )
+            print(f"Aggregate experimental results saved to {args.output}")
         else:
             engine = make_engine(args.db_path, readonly=True)
             try:

@@ -40,7 +40,7 @@ def load_insight(artifact_dir: Path, name: str, database_path: Path) -> dict:
         if value["dataset"]["source_sha256"] != dataset_identity(database_path)["source_sha256"]:
             raise ValueError("Database inputs changed; regenerate analytical outputs")
         return value
-    except (OSError, ValueError, KeyError) as exc:
+    except (OSError, ValueError, KeyError, TypeError) as exc:
         raise InsightUnavailable(
             f"{name} insights unavailable: {exc}. Run 'fulfilliq build-insights'."
         ) from exc

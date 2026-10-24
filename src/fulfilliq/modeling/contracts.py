@@ -74,6 +74,8 @@ class OrderRequest(BaseModel):
     @field_validator("purchased_at", "estimated_delivery_at")
     @classmethod
     def source_local_time(cls, value: datetime) -> datetime:
+        if not 1900 <= value.year <= 2100:
+            raise ValueError("Supported operational timestamps are within years 1900-2100")
         if value.tzinfo is not None:
             return value.astimezone(ZoneInfo("America/Sao_Paulo")).replace(tzinfo=None)
         return value

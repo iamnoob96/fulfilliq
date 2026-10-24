@@ -7,6 +7,7 @@ from conftest import write_source
 from fastapi.testclient import TestClient
 
 from fulfilliq.analytics.build import build_insights
+from fulfilliq.analytics.reporting import export_experiment
 from fulfilliq.api.main import create_app
 from fulfilliq.config import Settings
 from fulfilliq.ingestion.pipeline import ingest
@@ -246,3 +247,41 @@ def test_openapi_documents_all_backend_routes(integrated_backend):
     assert len(paths) == 13
     assert "/api/v1/orders/predict-batch" in paths
     assert "200" in paths["/api/v1/models/metrics"]["get"]["responses"]
+
+
+def test_aggregate_report_and_reingestion_compatibility(integrated_backend, tmp_path):
+    client, settings, _ = integrated_backend
+    result = export_experiment(settings, tmp_path / "experiment.json")
+    assert result["model"]["selected_model"]
+    assert "assignments" not in result["seller_segments"]
+    assert "anomalies" not in result["anomalies"]
+    assert "by_seller" not in result["reviews"]
+    # A rebuilt database with identical source hashes remains compatible with saved artifacts.
+    ingest(settings.raw_dir, settings.database_path, settings.processed_dir)
+    assert client.get("/api/v1/models/info").status_code == 200
+    assert client.get("/api/v1/reviews/insights").status_code == 200
+
+
+def test_changed_sources_reject_stale_models_and_reports(integrated_backend):
+    client, settings, _ = integrated_backend
+    source = settings.raw_dir / "olist_orders_dataset.csv"
+    original = source.read_bytes()
+    try:
+        source.write_bytes(original.replace(b",delivered,", b",shipped,", 1))
+        ingest(settings.raw_dir, settings.database_path, settings.processed_dir)
+        assert client.get("/api/v1/models/info").status_code == 503
+        assert client.get("/api/v1/mining/association-rules").status_code == 503
+    finally:
+        source.write_bytes(original)
+        ingest(settings.raw_dir, settings.database_path, settings.processed_dir)
+
+
+def test_corrupt_insight_shape_fails_cleanly(integrated_backend):
+    client, settings, _ = integrated_backend
+    report = settings.artifact_dir / "insights/rules.json"
+    original = report.read_bytes()
+    try:
+        report.write_text("[]")
+        assert client.get("/api/v1/mining/association-rules").status_code == 503
+    finally:
+        report.write_bytes(original)

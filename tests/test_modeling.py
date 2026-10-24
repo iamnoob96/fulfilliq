@@ -143,6 +143,7 @@ def test_train_persist_infer_and_artifact_integrity(raw_dir, tmp_path, training_
         {"customer_state": "Brazil"},
         {"estimated_delivery_at": "2018-01-01"},
         {"customer_latitude": 95},
+        {"purchased_at": "9999-01-01T00:00:00"},
     ],
 )
 def test_prediction_validation_rejects_outcome_fields_and_bad_values(changes):

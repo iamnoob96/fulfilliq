@@ -146,6 +146,12 @@ class RiskService:
                 )
             rationale.append("These are contextual observations, not causal feature attributions.")
             warnings = []
+            test = metadata["comparison"][metadata["selected_model"]]["test"]
+            if test["brier_score"] >= metadata["baselines"]["training_prevalence"]["brier_score"]:
+                warnings.append(
+                    "Historical test probability error exceeds the prevalence baseline; "
+                    "treat probabilities cautiously and validate before operational use."
+                )
             if not row.seller_history_count:
                 warnings.append(
                     "No seller outcomes available in the historical observation window."
