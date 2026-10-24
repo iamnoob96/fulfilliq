@@ -2,7 +2,9 @@
 
 import argparse
 import json
+from datetime import datetime, timezone
 from pathlib import Path
+from uuid import uuid4
 
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -47,6 +49,18 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Activate only if every preregistered validation/test gate passes",
     )
+    temporal = commands.add_parser(
+        "evaluate-temporal", help="Backtest rolling calibration policies without promotion"
+    )
+    temporal.add_argument("--db-path", type=Path, default=settings.database_path)
+    temporal.add_argument("--artifact-dir", type=Path, default=settings.artifact_dir)
+    temporal.add_argument(
+        "--output", type=Path, help="New JSON path; a Markdown summary is saved alongside"
+    )
+    from fulfilliq.modeling.rolling import RollingConfig
+
+    for name, default in vars(RollingConfig()).items():
+        temporal.add_argument("--" + name.replace("_", "-"), type=int, default=default)
     score = commands.add_parser("score", help="Score an order JSON file using the persisted model")
     score.add_argument("--input", type=Path, required=True)
     score.add_argument("--db-path", type=Path, default=settings.database_path)
@@ -135,6 +149,20 @@ def main(argv: list[str] | None = None) -> int:
                     indent=2,
                 )
             )
+        elif args.command == "evaluate-temporal":
+            from fulfilliq.modeling.temporal_evaluation import run_temporal_evaluation
+
+            config = RollingConfig(**{name: getattr(args, name) for name in vars(RollingConfig())})
+            output = args.output or args.artifact_dir / "temporal" / (
+                datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
+                + "-"
+                + uuid4().hex[:8]
+                + ".json"
+            )
+            report = run_temporal_evaluation(args.db_path, args.artifact_dir, output, config)
+            print(output.with_suffix(".md").read_text())
+            print(f"Structured report: {output}")
+            return 0 if report["status"] == "complete" else 1
         elif args.command == "score":
             from fulfilliq.modeling.contracts import OrderRequest
             from fulfilliq.modeling.inference import RiskService
