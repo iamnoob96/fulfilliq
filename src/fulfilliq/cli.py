@@ -17,7 +17,7 @@ from fulfilliq.ingestion.pipeline import ingest
 
 def main(argv: list[str] | None = None) -> int:
     settings = Settings()
-    parser = argparse.ArgumentParser(description="FulfillIQ Phase 1 data foundation")
+    parser = argparse.ArgumentParser(description="FulfillIQ logistics intelligence backend")
     commands = parser.add_subparsers(dest="command", required=True)
     download = commands.add_parser("download", help="Download the nine original public CSVs")
     download.add_argument("--raw-dir", type=Path, default=settings.raw_dir)
@@ -29,6 +29,17 @@ def main(argv: list[str] | None = None) -> int:
     for name in ("verify", "stats"):
         command = commands.add_parser(name, help=f"Read local database {name}")
         command.add_argument("--db-path", type=Path, default=settings.database_path)
+    train = commands.add_parser("train", help="Train and evaluate chronological delay models")
+    train.add_argument("--db-path", type=Path, default=settings.database_path)
+    train.add_argument("--artifact-dir", type=Path, default=settings.artifact_dir)
+    train.add_argument("--maturity-days", type=int, default=14)
+    train.add_argument("--lag-days", type=int, default=1)
+    train.add_argument("--history-window-days", type=int, default=180)
+    train.add_argument("--as-of", help="Optional source-local observation cutoff timestamp")
+    score = commands.add_parser("score", help="Score an order JSON file using the persisted model")
+    score.add_argument("--input", type=Path, required=True)
+    score.add_argument("--db-path", type=Path, default=settings.database_path)
+    score.add_argument("--artifact-dir", type=Path, default=settings.artifact_dir)
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     try:
@@ -46,6 +57,34 @@ def main(argv: list[str] | None = None) -> int:
                     indent=2,
                 )
             )
+        elif args.command == "train":
+            from fulfilliq.modeling.training import train_delivery_model
+
+            metadata = train_delivery_model(
+                args.db_path,
+                args.artifact_dir,
+                maturity_days=args.maturity_days,
+                lag_days=args.lag_days,
+                window_days=args.history_window_days,
+                as_of=args.as_of,
+            )
+            print(
+                json.dumps(
+                    {
+                        "model_version": metadata["model_version"],
+                        "selected_model": metadata["selected_model"],
+                        "test": metadata["comparison"][metadata["selected_model"]]["test"],
+                    },
+                    indent=2,
+                )
+            )
+        elif args.command == "score":
+            from fulfilliq.modeling.contracts import OrderRequest
+            from fulfilliq.modeling.inference import RiskService
+
+            request = OrderRequest.model_validate_json(args.input.read_text())
+            prediction = RiskService(args.artifact_dir, args.db_path).predict([request])[0]
+            print(prediction.model_dump_json(indent=2))
         else:
             engine = make_engine(args.db_path, readonly=True)
             try:
