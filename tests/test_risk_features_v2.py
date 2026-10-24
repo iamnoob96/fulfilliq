@@ -4,7 +4,13 @@ import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
 
-from fulfilliq.features.risk_v2 import V2_FEATURES, DeliveryHistoryV2, placement_v2
+from fulfilliq.features.risk_v2 import (
+    V2_FEATURES,
+    DeliveryHistoryV2,
+    build_dataset_v2,
+    placement_v2,
+)
+from fulfilliq.ingestion.pipeline import ingest
 from fulfilliq.modeling.contracts import OrderRequest
 from fulfilliq.modeling.inference import request_features
 
@@ -146,3 +152,12 @@ def test_zero_order_value_ratio_is_unknown():
         items=[{"seller_id": "s1", "seller_state": "SP", "price": 0, "freight_value": 10}]
     )
     assert np.isnan(request_features([req], history).iloc[0].freight_value_ratio)
+
+
+def test_protected_purchases_are_removed_before_history_construction(raw_dir, tmp_path):
+    db = tmp_path / "warehouse.sqlite3"
+    ingest(raw_dir, db, tmp_path)
+    frame, history, orders, items = build_dataset_v2(db, purchase_before="2018-01-02")
+    assert set(frame.index) == {"o1"}
+    assert set(orders.order_id) == set(items.order_id) == {"o1"}
+    assert history.global_history["all"][1][-1, 0] == 1

@@ -112,8 +112,11 @@ class DeliveryHistoryV2(OutcomeHistory):
         return result.assign(**columns)
 
 
-def build_dataset_v2(database_path: Path, *, lag_days=1, window_days=180):
+def build_dataset_v2(database_path: Path, *, lag_days=1, window_days=180, purchase_before=None):
     orders, items = load_orders(database_path)
+    if purchase_before is not None:
+        orders = orders.loc[orders.purchased_at.lt(pd.Timestamp(purchase_before))].copy()
+        items = items.loc[items.order_id.isin(orders.order_id)].copy()
     history = DeliveryHistoryV2(orders, items, lag_days=lag_days, window_days=window_days)
     memberships = items.groupby("order_id").seller_id.unique().apply(list).to_dict()
     frame = history.enrich(placement_v2(orders, items), memberships)
