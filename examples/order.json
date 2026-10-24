@@ -1,0 +1,24 @@
+{
+  "order_id": "example-order-001",
+  "purchased_at": "2018-07-01T12:00:00",
+  "estimated_delivery_at": "2018-07-20T00:00:00",
+  "customer_state": "RJ",
+  "customer_latitude": -22.9,
+  "customer_longitude": -43.2,
+  "items": [
+    {
+      "seller_id": "example-seller",
+      "seller_state": "SP",
+      "product_category": "housewares",
+      "quantity": 2,
+      "price": 120,
+      "freight_value": 20,
+      "weight_g": 500,
+      "length_cm": 20,
+      "height_cm": 10,
+      "width_cm": 15,
+      "seller_latitude": -23.55,
+      "seller_longitude": -46.63
+    }
+  ]
+}

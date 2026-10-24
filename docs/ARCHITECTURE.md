@@ -1,4 +1,4 @@
-# Phase 1 architecture
+# Architecture and data schema
 
 The local Python package has a small batch interface and a separate HTTP interface:
 
@@ -108,10 +108,29 @@ recoverable from `etl_runs`. Readers should match report run IDs when comparing 
 The API opens fresh read-only connections for health checks. This project assumes one
 local batch writer and no external schema mutations; stop the server during a refresh.
 
-## Phase boundary
+## Intelligence services and phase compatibility
 
-Historical timestamps, outcomes, review summaries and final statuses are intentionally
-available for reporting. They must never be passed wholesale to a purchase-time model.
-No Phase 2 feature engineering, label-maturity splits, training, persisted models,
-classification metrics, association rules, clustering, anomaly detection or NLP is
-implemented in this phase. These modules will be added only when their phase begins.
+Historical timestamps, outcomes, review summaries and final statuses remain available
+for reporting. The purchase-time classifier uses a separate explicit feature allowlist
+in `features/orders.py`, never the whole historical mart. `modeling/` handles purged
+temporal splits, frozen calibration, candidate evaluation, versioned artifact publication
+and read-only scoring. `mining/` handles patterns, medoids and historical anomaly screens;
+`nlp/` handles post-order Portuguese reviews. `analytics/operations.py` queries filtered
+order cohorts; `analytics/build.py` generates snapshots; `analytics/reporting.py` exports
+small aggregate experiment results. `api/routes.py` and typed schemas expose the services.
+
+The nine source and nine warehouse/metadata tables retain schema version 1. The original
+ingestion commands and calendar-day historical `stats` remain compatible. New model and
+operational intelligence use exact timestamp lateness and state that target explicitly.
+The health endpoint retains database readiness; models/reports have separate 503 failures.
+
+Only explicit CLI operations train or mine. Saved model histories are indexed by outcome
+availability and queried strictly before each requested purchase timestamp. The API's
+model service serializes loads/scoring with a lock and limits numerical thread use.
+It verifies source hashes, artifact checksum, feature version and scikit-learn version.
+Insight snapshots also verify input hashes. Fresh database ingestion of identical sources
+does not invalidate compatible artifacts; different inputs require regeneration.
+
+No microservices, live queue, mandatory cloud infrastructure, frontend or event collection
+system is introduced. The monolith simulates historical checkout-time knowledge; it cannot
+recover unrecorded promise edits, per-seller events or actual audit-log availability.

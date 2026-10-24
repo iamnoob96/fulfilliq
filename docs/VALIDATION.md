@@ -1,5 +1,8 @@
 # Phase 1 verification
 
+This section preserves the original ingestion baseline. Current end-to-end results are in
+[RESULTS.md](RESULTS.md) and [the aggregate experiment](results/experiment.json).
+
 Verified on **24 October 2026**, using Python 3.11.3 on macOS / Apple Silicon (arm64). The tested dependency
 versions are recorded in `uv.lock`. These are observed local results, not model results.
 

@@ -1,47 +1,69 @@
 # FulfillIQ
 
-Intelligent E-Commerce Order & Logistics Management — a university Data Mining project.
-**Phase 1 is implemented:** original Olist CSV acquisition, validation, SQLite ingestion,
-a historical order mart, data-quality reporting, descriptive statistics, and a health API.
-There is no storefront, trained model, prediction endpoint, mining, or NLP yet.
+An internal **e-commerce logistics intelligence backend**, built for a university Data
+Mining project. It uses the nine original Olist CSVs to predict purchase-time delivery
+risk, investigate historical fulfillment, mine delay associations, segment sellers,
+screen unusual operations and analyze Portuguese reviews. There is no storefront.
 
-## Install (macOS / Apple Silicon)
+Private source repository: [iamnoob96/fulfilliq](https://github.com/iamnoob96/fulfilliq).
 
-Use Python **3.11 or newer**. The macOS system Python may be older.
-From this project directory:
+## Implemented capabilities
+
+- Validated, idempotent ETL of all nine tables into SQLite; normalized sources and a
+  star-schema-style mart with exactly one fact per order.
+- Strictly backward-looking seller/region histories, chronological mature-label splits,
+  Logistic Regression, Random Forest and histogram gradient boosting, probability
+  calibration, validation-only candidate/threshold selection and persisted inference.
+- Filterable approval, dispatch, transit, delivery and lateness analytics, with seller,
+  region, category and monthly cohorts. Shared orders never multiply financial totals.
+- Apriori and FP-Growth, support/confidence/lift/leverage, interpreted seller K-Medoids
+  segments with stability checks, and historical Isolation Forest/Wilson/robust screens.
+- Portuguese normalization, lexical delivery themes, TF-IDF interpretation and a
+  separate chronological review-score-supervised sentiment model.
+- Thirteen typed FastAPI routes, single/batch scoring, investigation recommendations,
+  pagination, explicit failures, structured application logs and Swagger examples.
+
+This is a working **historical offline simulation and local API**. The selected delay
+model has modest discrimination and poorer test probability error than a prevalence
+baseline. It requires forward validation before operational deployment. No intervention
+benefits, causal bottlenecks, confirmed incidents or verified complaint labels are claimed.
+
+## Install
+
+Use Python **3.11+**; Python 3.11 on macOS/Apple Silicon is verified. Install
+[uv](https://docs.astral.sh/uv/) and work from the repository root:
 
 ```sh
-python3.11 -m venv .venv
-source .venv/bin/activate
-python -m pip install -e '.[dev]'
-```
-
-Alternatively, with [uv](https://docs.astral.sh/uv/):
-
-```sh
+git clone https://github.com/iamnoob96/fulfilliq.git
+cd fulfilliq
 uv sync --locked --extra dev
 source .venv/bin/activate
 ```
 
-The committed `uv.lock` records the tested dependency versions. With pip, the version
-ranges in `pyproject.toml` apply. No cloud accounts, credentials, Docker, or GPU are needed.
-Phase 2 will add scikit-learn/joblib; Phase 3 will add mlxtend when those modules are built.
+The private clone requires your GitHub access. Data/model workflows require no paid APIs,
+cloud accounts, Docker or GPU. `uv.lock` pins tested versions. Alternatively use
+`python3.11 -m venv .venv`, activation, then `python -m pip install -e '.[dev]'`.
+Pip uses the ranges in `pyproject.toml` rather than the uv lockfile.
 
-## Acquire the nine original CSVs
+`.env.example` is a reference, not automatically loaded. Export `FULFILIQ_DATA_DIR` and
+`FULFILIQ_ARTIFACT_DIR` to change default `./data` and `./artifacts` locations. Relative
+paths resolve against the working directory. The default Python version for uv is 3.11.
+
+## Acquire the original data
 
 ```sh
 fulfilliq download
 ```
 
-This downloads only the original CSV tables from a pinned revision of the public
-[Hugging Face mirror](https://huggingface.co/datasets/miminmoons/olist-ecommerce-for-delivery-and-review-prediction/tree/2d912b5439d1c42d8c0e6ae84b906f995cbbbeb4/data).
-It never downloads the mirror's preprocessed Parquet file. Downloads use temporary files,
-validate headers, and record SHA-256 hashes in `data/raw/download_manifest.json`.
-Existing valid files are reused; use `--force` explicitly to replace them.
+The credential-free downloader fetches only original CSVs from a pinned public
+[mirror revision](https://huggingface.co/datasets/miminmoons/olist-ecommerce-for-delivery-and-review-prediction/tree/2d912b5439d1c42d8c0e6ae84b906f995cbbbeb4/data).
+It validates headers/response lengths, uses atomic temporary downloads, reuses existing
+files, and records SHA-256 hashes. `--force` explicitly replaces existing files.
+It does not use the mirror's preprocessed Parquet dataset.
 
-If public downloading fails, obtain the original
-[Olist dataset on Kaggle](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce),
-or manually download the CSVs from the mirror, and put these files directly in `data/raw/`:
+If downloading fails, obtain the original
+[Olist dataset](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) or its CSV
+mirror manually and place these exact files in `data/raw/`:
 
 ```text
 olist_customers_dataset.csv
@@ -55,84 +77,135 @@ olist_sellers_dataset.csv
 product_category_name_translation.csv
 ```
 
-Keep the original filenames, headers, UTF-8 encoding, and identifiers. Do not edit them
-in a spreadsheet that converts identifiers or ZIP prefixes to numbers.
-See [dataset attribution](docs/DATASET.md) for the original CC BY-NC-SA 4.0 license.
+Retain UTF-8, original headers, IDs and ZIP leading zeros. Do not round-trip raw files
+through a spreadsheet. The original dataset is **Olist, CC BY-NC-SA 4.0**; its attribution
+and terms are retained despite the mirror's different repository license label.
+See [dataset attribution](docs/DATASET.md).
 
-## Ingest and inspect
+## Reproduce the complete backend
 
 ```sh
 fulfilliq ingest
 fulfilliq verify
 fulfilliq stats
-```
-
-Defaults: raw files in `data/raw/`, database at `data/processed/fulfilliq.sqlite3`,
-reports at `data/processed/data_quality.json` and `data/processed/logistics_summary.json`.
-Reports are also stored inside the database in `etl_runs`, so they stay tied to its contents.
-Failed runs write `ingestion_failure.json` with validation details and preserve the previous
-database. A completed run clears an older failure report.
-
-Ingestion rebuilds a temporary database, validates keys, foreign keys, totals and SQLite
-integrity, then atomically replaces the previous snapshot. Repeating it produces the same
-tables and metrics from the same files. Stop the API while refreshing the database; this
-is a single-writer local batch workflow. Budget roughly 1 GB of free disk and up to 1 GB
-of RAM for the original dataset; geolocation is read one table at a time.
-
-For other locations, export `FULFILIQ_DATA_DIR=/absolute/path/to/data` or use explicit flags:
-
-```sh
-fulfilliq download --raw-dir /path/to/raw
-fulfilliq ingest --raw-dir /path/to/raw --db-path /path/to/fulfilliq.sqlite3 --report-dir /path/to/reports
-fulfilliq verify --db-path /path/to/fulfilliq.sqlite3
-fulfilliq stats --db-path /path/to/fulfilliq.sqlite3
-```
-
-`.env.example` documents the environment variable; it is not automatically loaded.
-Never point a report directory or database path at an original source CSV.
-
-## Run the API
-
-```sh
+fulfilliq train
+fulfilliq build-insights
+fulfilliq export-report
+pytest -q
+ruff check .
 uvicorn fulfilliq.api.main:app --host 127.0.0.1 --port 8000
 ```
 
+Training compares all three candidates, calibrates frozen estimators on a reserved mature
+training period, selects the candidate/threshold on validation and evaluates later test
+orders. It saves the pipeline, calibration, history indices, schema, threshold, metrics,
+source hashes and versions. The selected estimator is not refitted on test data.
+
+`build-insights` creates every historical analytical output. Individual runs and parameters:
+
+```sh
+fulfilliq train --maturity-days 14 --lag-days 1 --history-window-days 180
+fulfilliq build-insights --module operations
+fulfilliq build-insights --module rules --min-support .01 --min-confidence .15 --min-lift 1.1 --max-length 3
+fulfilliq build-insights --module segments --min-seller-orders 10
+fulfilliq build-insights --module anomalies --contamination .02 --anomaly-min-orders 20
+fulfilliq build-insights --module reviews
+fulfilliq score --input examples/order.json
+```
+
+The dataset is about 126 MB of CSVs. Allow a few GB of disk and roughly 1–2 GB RAM for a
+full workflow; CPU parallelism is bounded. Training and mining take minutes depending on
+hardware. Stop the API during database refreshes. This is a local single-writer workflow.
+
+## API and examples
+
+Swagger: <http://127.0.0.1:8000/docs>. OpenAPI: <http://127.0.0.1:8000/openapi.json>.
+
 ```sh
 curl http://127.0.0.1:8000/health
+curl -X POST http://127.0.0.1:8000/api/v1/orders/predict-delay \
+  -H 'Content-Type: application/json' --data-binary @examples/order.json
+curl 'http://127.0.0.1:8000/api/v1/analytics/bottlenecks?group_by=region&min_orders=100'
+curl 'http://127.0.0.1:8000/api/v1/mining/association-rules?min_lift=1.5&limit=10'
+python scripts/smoke_api.py
 ```
 
-Swagger UI: <http://127.0.0.1:8000/docs>. OpenAPI: <http://127.0.0.1:8000/openapi.json>.
-`GET /health` is a typed liveness/readiness response: HTTP 200 after ingestion, HTTP 503
-with `database: missing` before ingestion, or `database: invalid` for an unreadable or
-incompatible database. The server starts before any data exists and never creates a
-database as a side effect of a health check. Health verifies the schema version and a
-small required-table query; full data integrity checks belong to `fulfilliq verify`.
+`examples/order.json` is an explicitly synthetic historical scenario, not an Olist record
+or reported model result. Each item price/freight/dimension describes one unit; `quantity`
+multiplies it. Coordinates are optional pairs. Batch requests accept `{"orders": [...]}`
+with unique IDs and at most 100 orders. Requests forbid delivery outcomes, handoffs,
+statuses and review fields. Naive timestamps are Brazilian source-local; aware timestamps
+convert to America/Sao_Paulo. Responses include contextual rationale, cautions, model
+version, threshold and an investigation recommendation.
 
-## Tests
+| Method | Route |
+| --- | --- |
+| GET | `/health` |
+| POST | `/api/v1/orders/predict-delay` |
+| POST | `/api/v1/orders/predict-batch` |
+| GET | `/api/v1/analytics/overview` |
+| GET | `/api/v1/analytics/bottlenecks` |
+| GET | `/api/v1/analytics/delivery-performance` |
+| GET | `/api/v1/mining/association-rules` |
+| GET | `/api/v1/mining/anomalies` |
+| GET | `/api/v1/sellers/segments` |
+| GET | `/api/v1/sellers/{seller_id}/insights` |
+| GET | `/api/v1/reviews/insights` |
+| GET | `/api/v1/models/metrics` |
+| GET | `/api/v1/models/info` |
 
-```sh
-pytest
-ruff check .
-```
+Operational filters combine seller, region, category and inclusive purchase-date ranges.
+Lists use `limit`/`offset`; mining endpoints filter already-generated reports. Health
+retains its original database-readiness contract. Missing models/reports return **503**
+with CLI recovery instructions; invalid inputs return **422** and unknown seller insights
+return **404**. No request trains a model. See [API details](docs/API.md).
 
-Tests use explicitly synthetic temporary fixtures. They cover all nine source tables,
-multi-item/multi-seller/multi-payment joins, missing/invalid values, duplicates, Unicode
-reviews, foreign keys, repeat ingestion, failed-run preservation, downloader failures,
-and API behavior. They require no internet or real data.
+## Observed results
 
-## Data and scope
+Real ingestion: **99,441 orders**, **112,650 items**, **103,886 payments**, **99,224 reviews**.
+Integrity, foreign keys, order grain and monetary reconciliation passed.
 
-See [architecture and grain](docs/ARCHITECTURE.md),
-[cleaning and reporting assumptions](docs/DATA_DECISIONS.md), and
-[verification results](docs/VALIDATION.md).
-The mart contains **historical outcomes**, final statuses and review summaries; it is
-**not a purchase-time prediction dataset**. Phase 2 must build a separate feature view
-and implement chronological, label-mature splits before fitting preprocessing or models.
-Initial late-delivery statistics compare calendar delivery dates with estimated dates;
-only delivered orders with coherent, complete timestamps enter the denominator.
-All orders, including canceled and missing-outcome orders, remain in source and fact tables.
+The new exact timestamp target has **7,826 late / 96,470 eligible deliveries (8.11%)**.
+Original `stats` and `fact_orders.is_late` retain calendar-day comparison for compatibility:
+**6,534 / 96,470 (6.77%)**. These definitions must not be mixed.
 
-Remaining phases: leakage-safe Logistic Regression/Random Forest and evaluation;
-Apriori/FP-Growth, seller clustering and historical anomalies; Portuguese review analysis;
-analytical/prediction APIs and the final project report. No results from those phases
-are claimed here. Raw data, databases, reports and model artifacts are ignored by Git.
+Validation selected **calibrated histogram gradient boosting**. Its later test period
+contains **14,551 orders**: ROC-AUC **0.6483**, average precision **0.0977**, precision
+**0.1025**, recall **0.1735**, F1 **0.1289**, Brier **0.0684**, and top-decile precision
+**0.1030** (test prevalence **0.0658**). The prevalence baseline has better Brier error
+(**0.0616**). Candidate rankings reversed on test, demonstrating temporal instability;
+the executable selection rule still uses validation only.
+
+Other findings: one supported SP-seller/RJ-customer delay rule (lift **1.917**); two
+segments across **1,271** sufficiently observed sellers; **1,989** order-characteristic
+anomaly flags; **42,454** reviews with text. The separate noisy-star sentiment model has
+chronological test accuracy **95.06%**, versus **73.79%** for the majority baseline.
+
+See [full results](docs/RESULTS.md) and the reproducible
+[aggregate JSON](docs/results/experiment.json). Test diagnostics were inspected during
+engineering; this is exploratory evaluation, not a blind external production benchmark.
+
+## Tests, artifacts and limitations
+
+Tests cover ingestion, temporal leakage, calibration, multi-seller aggregation, training,
+persistence, deterministic single/batch scoring, miners, clustering stability, anomalies,
+Portuguese text, provenance, all API routes and a complete nine-table synthetic workflow.
+Real workflows and live HTTP checks are recorded in [validation](docs/VALIDATION.md).
+Synthetic test performance is never presented as real Olist model performance.
+
+Raw CSVs, databases, record-level outputs, binaries, environment files and secrets are
+ignored by Git. `data/processed/fulfilliq.sqlite3` holds sources/marts; `etl_runs` stores
+canonical ingestion reports. `artifacts/delivery/<version>/` stores trusted local models
+and metadata, with atomic `current.json`; `artifacts/insights/` stores provenance-checked
+JSON snapshots; `artifacts/reviews/sentiment.joblib` stores the NLP model. Only small
+aggregate results are committed. Never load untrusted joblib files.
+
+Key limits: historical 2016–2018 data, unknown modern-domain validity, approximate event
+observation times, static checkout attributes, unavailable-outcome selection bias, limited
+probability calibration, global historical anomaly references, non-causal shared-order
+seller attribution, moderate segment stability, unverified lexical complaint rules and
+noisy sentiment stars. The local API has no production authentication layer.
+
+Technical details: [architecture/schema](docs/ARCHITECTURE.md),
+[cleaning assumptions](docs/DATA_DECISIONS.md), [model methodology](docs/METHODOLOGY.md),
+[mining/NLP](docs/MINING_AND_NLP.md), [syllabus mapping](docs/SYLLABUS.md).

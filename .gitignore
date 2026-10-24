@@ -32,3 +32,8 @@ artifacts/*
 *.db
 *.joblib
 *.part
+*.parquet
+*.feather
+*.h5
+*.onnx
+*.pt
