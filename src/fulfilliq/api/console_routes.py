@@ -20,9 +20,9 @@ from fulfilliq.api.console_schemas import (
 )
 from fulfilliq.api.routes import cohort_filter
 from fulfilliq.config import Settings
-from fulfilliq.modeling.contracts import OrderRequest
 from fulfilliq.modeling.inference import RiskService
 from fulfilliq.operations.orders import OrderNotFound, OrderService
+from fulfilliq.operations.replay import score_orders
 from fulfilliq.operations.reviews import (
     ReviewConflict,
     ReviewState,
@@ -30,6 +30,15 @@ from fulfilliq.operations.reviews import (
     ReviewStore,
     ReviewUpdate,
 )
+
+
+def write_access(settings: Settings):
+    def authorize(authorization: Annotated[str | None, Header()] = None):
+        expected = "Bearer " + settings.write_token
+        if not settings.write_token or not secrets.compare_digest((authorization or "").encode(), expected.encode()):
+            raise HTTPException(403, "Review writes require the configured local operations token")
+
+    return authorize
 
 
 def console_router(settings: Settings) -> APIRouter:
@@ -44,10 +53,6 @@ def console_router(settings: Settings) -> APIRouter:
         except OrderNotFound as exc:
             raise HTTPException(404, str(exc)) from exc
 
-    def authorize(authorization: Annotated[str | None, Header()] = None):
-        expected = "Bearer " + settings.write_token
-        if not settings.write_token or not secrets.compare_digest((authorization or "").encode(), expected.encode()):
-            raise HTTPException(403, "Review writes require the configured local operations token")
 
     @router.get("/console/options", response_model=FilterOptions)
     def options():
@@ -74,17 +79,7 @@ def console_router(settings: Settings) -> APIRouter:
     @router.post("/orders/replay", response_model=ReplayResponse)
     def replay(batch: ReplayRequest):
         snapshot = orders.snapshot()
-        requests, unavailable = [], []
-        for identifier in batch.order_ids:
-            try:
-                order = orders.detail(identifier)
-                if order["replay_payload"] is not None:
-                    requests.append(OrderRequest.model_validate(order["replay_payload"]))
-                else:
-                    unavailable.append({"order_id": identifier, "reason": order["replay_unavailable_reason"]})
-            except OrderNotFound:
-                unavailable.append({"order_id": identifier, "reason": "Order not found"})
-        predictions = risk.predict(requests) if requests else []
+        predictions, unavailable = score_orders(orders, risk, batch.order_ids)
         if orders.snapshot() != snapshot:
             raise HTTPException(409, "Warehouse changed during scoring; retry the candidate batch")
         ranked = sorted(predictions, key=lambda value: -value.delay_probability)
@@ -104,7 +99,7 @@ def console_router(settings: Settings) -> APIRouter:
         return detail(order_id)
 
     @router.put("/orders/{order_id}/review", response_model=ReviewState,
-                dependencies=[Depends(authorize)], responses={409: {"description": "Revision conflict"}})
+                dependencies=[Depends(write_access(settings))], responses={409: {"description": "Revision conflict"}})
     def update_review(order_id: str, change: ReviewUpdate):
         detail(order_id)
         try:
