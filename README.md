@@ -19,6 +19,9 @@ uv sync --locked --extra dev --extra console
 
 Open **[Operations console](http://127.0.0.1:8501)** or
 [Swagger](http://127.0.0.1:8000/docs). Startup does not train or rebuild anything.
+The eight-page editorial edition uses the supplied warm palette, locally bundled
+Fraunces/DM Sans/IBM Plex Mono typefaces, and a shared chart system. See the
+[design guide and actual screenshots](docs/EDITORIAL_DESIGN.md).
 The Streamlit/Plotly console calls FastAPI for overview KPIs, historical order replay,
 capacity-limited review queues, persistent investigation notes/status, logistics,
 seller peers, mining, Portuguese review evidence, saved model results and report exports.
@@ -35,6 +38,8 @@ See the **[complete setup and demo walkthrough](docs/OPERATIONS_CONSOLE.md)**,
 [actual integration evidence](docs/results/application-integration-20261024.json), and
 [optional R setup](r_analysis/README.md). R arules Apriori is verified against Python
 on identical transactions; ggplot2 generates four historical logistics plots.
+
+![The actual editorial operations console](docs/screenshots/editorial/01-overview-desktop.png)
 
 Fresh clones need the explicit data and artifact preparation steps below. Existing
 saved artifacts should be reused. Prediction-model optimization and promotion are
@@ -277,6 +282,8 @@ The later workflow-reliability sprint passes **143 tests**, including stale draf
 cache validity, navigation, discovery filters and CSV consistency.
 The persistent-cohort checkpoint passes **153 tests** and verifies a 413-order real-data
 worker stop/restart: 411 scored, 2 unavailable, with matching full ranked CSV output.
+The editorial checkpoint passes **158 tests**, with all eight real-data pages rendered,
+desktop/tablet/mobile browser checks, local font-path verification, and unchanged warehouse/model hashes.
 Run `uv run --extra dev --extra console pytest -q`; opt-in real-data and console checks
 are documented in [the operations guide](docs/OPERATIONS_CONSOLE.md).
 

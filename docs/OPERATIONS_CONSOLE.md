@@ -5,6 +5,9 @@ logic, prediction and database access. Streamlit calls documented HTTP endpoints
 Plotly provides interactive charts. There is no model training on startup or in UI.
 The active model remains `20261024T031015-f87ea646`.
 
+The current editorial edition retains all eight sections and the existing operational
+workflows. See the [visual system, current screenshots and verification record](EDITORIAL_DESIGN.md).
+
 ## Start
 
 From the repository root, with existing Olist warehouse and saved artifacts:
@@ -133,9 +136,10 @@ The console supports paged order browsing; mining/seller explorer tables show th
 stated bounded subset and expose paginated APIs for deeper access. This is not a live
 carrier integration, automated incident resolver or validated intervention engine.
 
-![Actual running overview](screenshots/overview.png)
+![Actual running editorial overview](screenshots/editorial/01-overview-desktop.png)
 
-![Actual R comparison and delivery-duration plot](screenshots/r-report.png)
+Earlier screenshots in `screenshots/overview.png` and `screenshots/r-report.png` document
+the original integration checkpoint; the editorial design guide contains the current UI.
 
 ## Reliable investigation workflow (public-source sprint)
 
