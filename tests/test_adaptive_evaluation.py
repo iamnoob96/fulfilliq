@@ -158,7 +158,26 @@ def test_nested_real_schema_artifact_and_report_compatibility(tmp_path):
     assert report["folds"] and report["summary"]["selection_frequency"]
     assert pointer.read_bytes() == original and report["active_model_unchanged"]
     assert json.loads(output.read_text()) == report
+    summary = json.loads(output.with_suffix(".summary.json").read_text())
+    assert summary["folds"][0]["policies"] == report["folds"][0]["policies"]
+    assert summary["full_report_sha256"] and summary["summary_format_version"] == 1
     assert "Nested recency-adaptive" in output.with_suffix(".md").read_text()
     assert all(row["evaluation_end"] <= report["protected_start"] for row in report["folds"])
     with pytest.raises(ValueError, match="preserved"):
         run_adaptive_evaluation(settings.database_path, settings.artifact_dir, output, config())
+
+
+def test_outer_support_failure_falls_back_without_dropping_population(training_frame, monkeypatch):
+    from fulfilliq.modeling import adaptive_evaluation as module
+
+    monkeypatch.setattr(
+        module, "select_inner_policy", lambda *args: ("rolling_sigmoid_1d", False, {})
+    )
+    results = nested_evaluate(
+        synthetic_folds(training_frame), config(), calibration_policies((), (1,)), quick=True
+    )
+    assert results["folds"] and not results["failed_folds"]
+    for row in results["folds"]:
+        assert row["selected_policy"] == "raw" and row["raw_fallback"]
+        assert row["inner_selected_policy"] == "rolling_sigmoid_1d"
+        assert "effective support" in row["fallback_reason"]

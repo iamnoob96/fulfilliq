@@ -1,5 +1,6 @@
 """Nested historical policy selection with immutable outer evaluation windows."""
 
+import copy
 import importlib.metadata
 import logging
 import subprocess
@@ -16,6 +17,7 @@ from threadpoolctl import threadpool_limits
 
 from fulfilliq.features.risk_v2 import V2_CATEGORICAL, V2_FEATURES, build_dataset_v2
 from fulfilliq.ingestion.download import write_json
+from fulfilliq.ingestion.validation import sha256_file
 from fulfilliq.modeling.calibration import calibrate_predictions, calibration_policies
 from fulfilliq.modeling.censoring import censoring_diagnostics
 from fulfilliq.modeling.drift import probability_metrics, summarize_policies
@@ -312,6 +314,46 @@ def adaptive_markdown(report: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
+def compact_adaptive_report(report: dict) -> dict:
+    """Keep all outer results and inner gate evidence without repeated bin tables."""
+    compact = copy.deepcopy(report)
+    compact["summary_format_version"] = 1
+    compact["inner_metric_scope"] = (
+        "Selection diagnostics only; complete inner reliability/budget metrics remain in full report"
+    )
+    for fold in compact["folds"]:
+        for inner in fold["inner_folds"]:
+            inner["policies"] = {
+                name: {
+                    key: metrics[key]
+                    for key in (
+                        "samples",
+                        "brier_score",
+                        "brier_skill_vs_recent_prevalence",
+                        "pr_auc_average_precision",
+                        "precision_at_top_10_percent",
+                        "ap_delta_vs_raw",
+                        "top10_precision_delta_vs_raw",
+                        "threshold",
+                    )
+                }
+                for name, metrics in inner["policies"].items()
+            }
+        for policy in fold["inner_summary"]["policies"].values():
+            policy["metrics"] = {
+                key: value
+                for key, value in policy["metrics"].items()
+                if key
+                in (
+                    "brier_score",
+                    "brier_skill_vs_recent_prevalence",
+                    "ap_delta_vs_raw",
+                    "top10_precision_delta_vs_raw",
+                )
+            }
+    return compact
+
+
 def run_adaptive_evaluation(
     database_path: Path,
     artifact_dir: Path,
@@ -324,7 +366,10 @@ def run_adaptive_evaluation(
     max_inner_folds=3,
     quick=False,
 ):
-    if output.suffix != ".json" or output.exists() or output.with_suffix(".md").exists():
+    summary_path = output.with_suffix(".summary.json")
+    if output.suffix != ".json" or any(
+        path.exists() for path in (output, output.with_suffix(".md"), summary_path)
+    ):
         raise ValueError("Use a new .json report path; existing results are preserved")
     policies = calibration_policies(half_lives, windows)
     if min_inner_folds < 3 or max_inner_folds < min_inner_folds:
@@ -392,4 +437,8 @@ def run_adaptive_evaluation(
     }
     write_json(output, report)
     output.with_suffix(".md").write_text(adaptive_markdown(report))
+    compact = compact_adaptive_report(report)
+    compact["full_report_sha256"] = sha256_file(output)
+    compact["full_report_filename"] = output.name
+    write_json(summary_path, compact)
     return report
