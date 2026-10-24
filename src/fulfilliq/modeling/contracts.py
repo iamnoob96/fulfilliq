@@ -99,11 +99,20 @@ class OrderRequest(BaseModel):
 class BatchRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     orders: list[OrderRequest] = Field(min_length=1, max_length=100)
+    review_capacity: int | None = Field(
+        default=None,
+        ge=0,
+        le=100,
+        strict=True,
+        description="Optional number of orders to rank for review within this batch, independent of the model threshold.",
+    )
 
     @model_validator(mode="after")
     def unique_orders(self):
         if len({order.order_id for order in self.orders}) != len(self.orders):
             raise ValueError("Batch order identifiers must be unique")
+        if self.review_capacity is not None and self.review_capacity > len(self.orders):
+            raise ValueError("Review capacity cannot exceed the submitted order count")
         return self
 
 
@@ -121,3 +130,7 @@ class RiskResponse(BaseModel):
 class BatchResponse(BaseModel):
     predictions: list[RiskResponse]
     priority_order_ids: list[str] = Field(default_factory=list)
+    review_order_ids: list[str] = Field(
+        default_factory=list,
+        description="Highest model probabilities up to requested capacity; stable input order breaks ties. Empty if capacity omitted.",
+    )

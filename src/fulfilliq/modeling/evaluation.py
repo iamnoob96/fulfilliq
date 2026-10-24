@@ -27,7 +27,7 @@ def choose_threshold(labels, probabilities) -> float:
 
 
 def evaluate(labels, probabilities, threshold: float) -> dict:
-    labels = np.asarray(labels, dtype=int)
+    labels = np.asarray(labels)
     probabilities = np.asarray(probabilities, dtype=float)
     if (
         labels.ndim != 1
@@ -40,6 +40,7 @@ def evaluate(labels, probabilities, threshold: float) -> dict:
         or not 0 <= threshold <= 1
     ):
         raise ValueError("Evaluation requires binary labels and finite probabilities in [0, 1]")
+    labels = labels.astype(int)
     predicted = probabilities >= threshold
     ranking = np.argsort(-probabilities, kind="stable")
     budgets = {}

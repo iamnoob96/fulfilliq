@@ -215,6 +215,13 @@ class CalibrationBin(BaseModel):
     observed: float
 
 
+class ReviewBudgetMetrics(BaseModel):
+    reviewed_orders: int = Field(ge=1)
+    late_orders_captured: int = Field(ge=0)
+    precision: float = Field(ge=0, le=1)
+    recall: float = Field(ge=0, le=1)
+
+
 class EvaluationMetrics(BaseModel):
     precision: float
     recall: float
@@ -222,6 +229,8 @@ class EvaluationMetrics(BaseModel):
     roc_auc: float
     pr_auc_average_precision: float
     brier_score: float
+    mean_probability: float | None = Field(default=None, ge=0, le=1)
+    review_budgets: dict[str, ReviewBudgetMetrics] = Field(default_factory=dict)
     precision_at_top_10_percent: float
     top_10_percent_count: int
     confusion_matrix: list[list[int]]

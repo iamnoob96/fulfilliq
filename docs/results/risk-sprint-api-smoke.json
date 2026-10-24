@@ -1,0 +1,11 @@
+{
+  "get_endpoints_passed": 13,
+  "prediction_repeatability": "passed",
+  "single_batch_parity": "passed",
+  "capacity_review_queue": "passed",
+  "invalid_input_422": "passed",
+  "unknown_seller_404": "passed",
+  "model_version": "20261024T031015-f87ea646",
+  "example_is_synthetic": true,
+  "example_probability": 0.14808860422186856
+}

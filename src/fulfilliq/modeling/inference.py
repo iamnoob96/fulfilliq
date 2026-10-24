@@ -130,7 +130,17 @@ class RiskService:
         metadata = self.load()
         frame = request_features(requests, self.bundle["history"])
         with threadpool_limits(limits=2):
-            probabilities = self.bundle["pipeline"].predict_proba(frame)[:, 1]
+            values = np.asarray(self.bundle["pipeline"].predict_proba(frame), dtype=float)
+        if (
+            values.shape != (len(requests), 2)
+            or not np.isfinite(values).all()
+            or ((values < 0) | (values > 1)).any()
+            or not np.allclose(values.sum(axis=1), 1, atol=1e-6)
+        ):
+            raise ModelUnavailable(
+                "Model returned invalid risk probabilities; restore a verified artifact."
+            )
+        probabilities = values[:, 1]
         predictions = []
         for order, probability in zip(requests, probabilities, strict=True):
             row = frame.loc[order.order_id]

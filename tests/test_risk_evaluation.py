@@ -26,3 +26,8 @@ def test_review_budgets_capture_delays_with_stable_ties():
 def test_invalid_probability_rejected(scores):
     with pytest.raises(ValueError, match="finite probabilities"):
         evaluate([0, 1], scores, 0.5)
+
+
+def test_fractional_labels_are_not_silently_truncated():
+    with pytest.raises(ValueError, match="binary labels"):
+        evaluate([0, 0.5], [0.1, 0.8], 0.5)

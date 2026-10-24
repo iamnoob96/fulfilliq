@@ -47,6 +47,19 @@ def smoke(base_url: str) -> dict:
     assert request("/api/v1/orders/predict-delay", payload) == first
     batch = request("/api/v1/orders/predict-batch", {"orders": [payload]})
     assert batch["predictions"][0] == first
+    second = {**payload, "order_id": payload["order_id"] + "-tie"}
+    capacity = request(
+        "/api/v1/orders/predict-batch",
+        {
+            "orders": [payload, second],
+            "review_capacity": 1,
+        },
+    )
+    assert capacity["review_order_ids"] == [payload["order_id"]]
+    assert capacity["predictions"][0] == first
+    request(
+        "/api/v1/orders/predict-batch", {"orders": [payload], "review_capacity": 2}, expected=422
+    )
     request("/api/v1/orders/predict-delay", {**payload, "delivered_at": "2018-07-10"}, expected=422)
     request("/api/v1/analytics/overview?start_date=2018-07-10&end_date=2018-07-01", expected=422)
     request("/api/v1/sellers/unknown-seller/insights", expected=404)
@@ -54,6 +67,7 @@ def smoke(base_url: str) -> dict:
         "get_endpoints_passed": len(paths) + 1,
         "prediction_repeatability": "passed",
         "single_batch_parity": "passed",
+        "capacity_review_queue": "passed",
         "invalid_input_422": "passed",
         "unknown_seller_404": "passed",
         "model_version": first["model_version"],

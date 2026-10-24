@@ -27,6 +27,29 @@ precomputed history rates or outcome data.
 `priority_order_ids` sorts flagged orders by decreasing score. Single and batch scoring
 use the same persisted estimator and feature generator.
 
+Optionally add `"review_capacity": 10` to select the ten highest probabilities
+within the submitted batch. `review_order_ids` returns this separate queue,
+independent of the threshold-based `priority_order_ids`. Capacity must be an
+integer from zero to the number of submitted orders; omission returns an empty
+review queue. Tied probabilities preserve input order. This is a batch-relative
+ranking, not a global percentile or a guarantee of delay. Across multiple
+batches, merge scores and rank the full cohort to enforce one global budget.
+
+```json
+{
+  "orders": [
+    {
+      "order_id": "investigate-001",
+      "purchased_at": "2018-07-01T12:00:00",
+      "estimated_delivery_at": "2018-07-20T00:00:00",
+      "customer_state": "RJ",
+      "items": [{"seller_id": "unknown-seller", "seller_state": "SP", "price": 50, "freight_value": 10}]
+    }
+  ],
+  "review_capacity": 1
+}
+```
+
 Responses include probability, validation-selected threshold, high/standard category,
 model version, recommendation, contextual rationale and evidence-based warnings. Context
 is not a causal local attribution. Purchases outside the historical observation horizon
@@ -79,7 +102,14 @@ evaluates noisy review-score labels, not complaint correctness. Raw text is not 
 
 `GET /api/v1/models/info` provides schema, target, provenance, versions, splits and
 assumptions. `/metrics` provides all candidates, baselines, threshold, calibration and
-validation permutation importance. Test performance does not drive model promotion.
+validation permutation importance. Newly generated metrics also include
+`mean_probability` and `review_budgets` for 5%, 10% and 20% review capacity
+(precision, captured late orders and recall). Older artifacts return null/empty
+for these additive fields rather than inventing unavailable measurements.
+Model selection uses validation only; the sprint's optional promotion also
+requires predeclared final-test safety gates. Better test metrics cannot override
+a failed validation gate. Models returning invalid probability vectors fail with
+503 rather than emitting a malformed risk score.
 
 `GET /health` retains its original response: 200 for a valid database, otherwise 503 with
 database missing/invalid. This is database readiness, not model readiness. Required model

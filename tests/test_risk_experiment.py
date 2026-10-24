@@ -56,7 +56,14 @@ def test_bounded_challenger_roundtrip_and_no_automatic_promotion(tmp_path):
         assert batch.json()["predictions"][0] == single.json()
         assert single.json()["model_version"] == version
         assert 0 <= single.json()["delay_probability"] <= 1
-        assert client.get("/api/v1/models/metrics").status_code == 200
+        metrics = client.get("/api/v1/models/metrics")
+        assert metrics.status_code == 200
+        selected = report["selected_challenger"]
+        assert set(metrics.json()["comparison"][selected]["test"]["review_budgets"]) == {
+            "5",
+            "10",
+            "20",
+        }
         assert client.get("/api/v1/models/info").status_code == 200
     metadata_path = settings.artifact_dir / "delivery" / version / "metadata.json"
     metadata = json.loads(metadata_path.read_text())

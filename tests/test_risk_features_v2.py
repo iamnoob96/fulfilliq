@@ -61,7 +61,7 @@ def test_availability_equality_lag_and_future_outcome_invariance():
     assert after.iloc[0].seller_smoothed_late_rate == 1
     changed = orders.copy()
     changed.loc[1:, "delivered_at"] = pd.Timestamp("2019-01-01")
-    changed.loc[1:, "estimated_at"] = pd.Timestamp("2018-01-01")
+    changed.loc[1, "estimated_at"] = pd.Timestamp("2018-01-03")
     changed_history = DeliveryHistoryV2(changed, items)
     assert_frame_equal(after, request_features([request("2018-01-05T00:00:01")], changed_history))
 

@@ -63,13 +63,13 @@ def intelligence_router(settings: Settings) -> APIRouter:
     @router.post("/orders/predict-batch", response_model=BatchResponse, tags=["Delivery risk"])
     def predict_batch(batch: BatchRequest):
         predictions = risk.predict(batch.orders)
+        ranked = sorted(predictions, key=lambda value: -value.delay_probability)
         return {
             "predictions": predictions,
-            "priority_order_ids": [
-                row.order_id
-                for row in sorted(predictions, key=lambda value: -value.delay_probability)
-                if row.risk_category == "high"
-            ],
+            "priority_order_ids": [row.order_id for row in ranked if row.risk_category == "high"],
+            "review_order_ids": [row.order_id for row in ranked[: batch.review_capacity]]
+            if batch.review_capacity is not None
+            else [],
         }
 
     @router.get("/analytics/overview", response_model=OverviewResponse, tags=["Operations"])
