@@ -5,7 +5,7 @@ Mining project. It uses the nine original Olist CSVs to predict purchase-time de
 risk, investigate historical fulfillment, mine delay associations, segment sellers,
 screen unusual operations and analyze Portuguese reviews. There is no storefront.
 
-Private source repository: [iamnoob96/fulfilliq](https://github.com/iamnoob96/fulfilliq).
+Public source repository: [iamnoob96/fulfilliq](https://github.com/iamnoob96/fulfilliq).
 
 ## Run the complete application
 
@@ -66,7 +66,7 @@ uv sync --locked --extra dev --extra console
 source .venv/bin/activate
 ```
 
-The private clone requires your GitHub access. Data/model workflows require no paid APIs,
+Cloning the public source requires no GitHub account. Data/model workflows require no paid APIs,
 cloud accounts, Docker or GPU. `uv.lock` pins tested versions. Alternatively use
 `python3.11 -m venv .venv`, activation, then `python -m pip install -e '.[dev,console]'`.
 Pip uses the ranges in `pyproject.toml` rather than the uv lockfile.

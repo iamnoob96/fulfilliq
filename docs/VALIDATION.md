@@ -258,3 +258,18 @@ features, chronological/label-mature splits, predictive models, mining results, 
 clusters, anomaly detection, or Portuguese NLP results. It is a local batch workflow,
 not a concurrent production ingestion system. See `DATA_DECISIONS.md` for timezone,
 calendar-day lateness, missing values, coordinate and floating-point assumptions.
+
+## Public repository reliability sprint — 24 October 2026
+
+The owner now explicitly requests public source visibility, superseding the earlier
+private-repository decision recorded above. GitHub CLI verified `PUBLIC`; no visibility
+change was needed. The README now describes public cloning correctly. Development
+services remain loopback-only and operational writes still require the local token.
+
+A reachable-history scan inspected 431 distinct path-bearing Git objects, checked
+credential patterns (GitHub, AWS, Slack, private keys), and audited forbidden runtime
+paths. It found no matching credentials, real environment files, databases, model
+binaries or operational-note files. Synthetic test tokens/notes and anonymized Olist
+aggregates are intentional. This bounded scan cannot prove absence of every possible
+secret. No history was rewritten. Olist attribution and CC BY-NC-SA terms remain; no
+source-code license has been selected, and no new license is applied here.
