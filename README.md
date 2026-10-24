@@ -113,6 +113,19 @@ fulfilliq build-insights --module reviews
 fulfilliq score --input examples/order.json
 ```
 
+For the bounded delivery-risk challenger protocol, run:
+
+```bash
+fulfilliq experiment-risk --output artifacts/risk-experiment.json
+```
+
+This preserves the active model and saves a separate challenger. Optional
+`--promote-if-qualified` applies the documented validation and final-test gates;
+existing report paths are never overwritten. The October optimization sprint
+improved held-out top-decile precision from 10.30% to 14.56%, but **did not
+promote** because validation ranking regressed. See the preserved comparisons in
+[experimental results](docs/RESULTS.md) and [protocol](docs/RISK_SPRINT.md).
+
 The dataset is about 126 MB of CSVs. Allow a few GB of disk and roughly 1–2 GB RAM for a
 full workflow; CPU parallelism is bounded. Training and mining take minutes depending on
 hardware. Stop the API during database refreshes. This is a local single-writer workflow.

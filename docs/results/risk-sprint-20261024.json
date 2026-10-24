@@ -1,0 +1,1273 @@
+{
+  "protocol": "docs/RISK_SPRINT.md",
+  "created_at_utc": "2026-10-24T03:51:36.025043+00:00",
+  "code_revision": "1db803795e3d5f77520cdc6c7d2734f6a806c866",
+  "quick": false,
+  "baseline_model_version": "20261024T031015-f87ea646",
+  "challenger_model_version": "20261024T035136-9caf890e",
+  "selected_challenger": "hist_gradient_boosting_raw_v2",
+  "dataset": {
+    "etl_run_id": "7f163742-9bfb-4b69-b421-639cb24caaa2",
+    "source_sha256": {
+      "category_translation": "a81f0d1f27b27e7293f761bc79e3ce8f348ee39c4b3ed3e49bde38f478586278",
+      "customers": "983a422239e1712ded753b3bf9ecf47dc73f144d306029dcfa99e70a226883d2",
+      "sellers": "1f643d2b950373b85735e7794b20986f528d7a000432e7c6f9bcbb44d0846a0e",
+      "products": "3e6569628a17fbc75fd206ee357b59e20364b9afa90f5b6cd5b4d624c58aa9cc",
+      "orders": "8df58ef3d2d7e9944010f7beecd9b75367f5588ec6e3c91cec19ae3345ef9ecf",
+      "order_items": "0bc4d068c4fe38cbb01bd90e8746e3c613fe7b4baef75fab7b0e329701c3e279",
+      "order_payments": "4f713964f2815dbbaa40b9488268c55aac3627bfce5aa96cf58d1f3616de3cc0",
+      "order_reviews": "012b61c7593e34f51fa614efdf802b9c7056ce6aae5307ddb93236e7cfc797d7",
+      "geolocation": "b514f6fc991b9566aeba02aa5d67e2c3630f034b60a0e05aa0d082a3b66d88d6"
+    }
+  },
+  "versions": {
+    "scikit-learn": "1.9.1",
+    "pandas": "2.3.3",
+    "numpy": "2.4.6",
+    "joblib": "1.6.0",
+    "fulfilliq": "0.1.0"
+  },
+  "split": {
+    "validation_start": "2018-04-13T21:53:34",
+    "test_start": "2018-06-20T16:28:15",
+    "observation_cutoff": "2018-10-17T17:30:18",
+    "maturity_days": 14,
+    "rule": "labels and estimated date + maturity buffer strictly before next boundary",
+    "counts": {
+      "train": 58954,
+      "validation": 7986,
+      "test": 14551
+    },
+    "excluded_unlabeled": 2971,
+    "purged_or_immature": 14979,
+    "periods": {
+      "train": {
+        "first_purchase": "2016-09-15T12:16:38",
+        "last_purchase": "2018-03-19T23:38:24",
+        "last_label_available": "2018-04-13T21:27:19",
+        "late_rate": 0.07987583539708926
+      },
+      "validation": {
+        "first_purchase": "2018-04-13T21:53:34",
+        "last_purchase": "2018-05-23T10:10:08",
+        "last_label_available": "2018-06-20T15:51:24",
+        "late_rate": 0.07150012521913349
+      },
+      "test": {
+        "first_purchase": "2018-06-20T16:28:15",
+        "last_purchase": "2018-08-29T15:00:37",
+        "last_label_available": "2018-10-03T00:18:50",
+        "late_rate": 0.06576867569239228
+      }
+    }
+  },
+  "split_membership_sha256": {
+    "train": "40261c69766740699bc2afbfba0a3682c943234f241fb557638b140f50e1d1e5",
+    "validation": "3532b8424760722ea75de8f715beadcf2ff0cebfd55378f4f6d3bae5d8c97c83",
+    "test": "c5a05d8869783162ffd112f16e5802d0f1fe6f89f4d3a6da425bf24fac3b4443"
+  },
+  "training": {
+    "base_count": 37082,
+    "calibration_count": 14739,
+    "base_late_rate": 0.055633460978372254,
+    "calibration_late_rate": 0.12321052988669516,
+    "calibration_start": "2018-01-04T09:51:50"
+  },
+  "validation_candidates": {
+    "logistic_regression_raw_v2": {
+      "validation": {
+        "precision": 0.11430855315747403,
+        "recall": 0.500875656742557,
+        "f1": 0.1861373250894891,
+        "roc_auc": 0.6479642604509013,
+        "pr_auc_average_precision": 0.11320057771643535,
+        "brier_score": 0.06621491640237034,
+        "mean_probability": 0.07870976566045502,
+        "review_budgets": {
+          "5": {
+            "reviewed_orders": 400,
+            "late_orders_captured": 54,
+            "precision": 0.135,
+            "recall": 0.09457092819614711
+          },
+          "10": {
+            "reviewed_orders": 799,
+            "late_orders_captured": 106,
+            "precision": 0.13266583229036297,
+            "recall": 0.18563922942206654
+          },
+          "20": {
+            "reviewed_orders": 1598,
+            "late_orders_captured": 190,
+            "precision": 0.11889862327909888,
+            "recall": 0.3327495621716287
+          }
+        },
+        "precision_at_top_10_percent": 0.13266583229036297,
+        "top_10_percent_count": 799,
+        "confusion_matrix": [
+          [
+            5199,
+            2216
+          ],
+          [
+            285,
+            286
+          ]
+        ],
+        "confusion_matrix_order": [
+          [
+            "true_negative",
+            "false_positive"
+          ],
+          [
+            "false_negative",
+            "true_positive"
+          ]
+        ],
+        "threshold": 0.09324142132022797,
+        "samples": 7986,
+        "late_rate": 0.07150012521913349,
+        "flagged_fraction": 0.31329827197595794,
+        "calibration": [
+          {
+            "predicted": 0.012617684525987709,
+            "observed": 0.012515644555694618
+          },
+          {
+            "predicted": 0.026727893301750974,
+            "observed": 0.03629536921151439
+          },
+          {
+            "predicted": 0.037131532947399175,
+            "observed": 0.05513784461152882
+          },
+          {
+            "predicted": 0.047058714673582074,
+            "observed": 0.05381727158948686
+          },
+          {
+            "predicted": 0.05772941082407222,
+            "observed": 0.05388471177944862
+          },
+          {
+            "predicted": 0.07009447600440215,
+            "observed": 0.07384230287859825
+          },
+          {
+            "predicted": 0.08622476969468575,
+            "observed": 0.09147869674185463
+          },
+          {
+            "predicted": 0.10621322210021486,
+            "observed": 0.10012515644555695
+          },
+          {
+            "predicted": 0.13478059651923177,
+            "observed": 0.10526315789473684
+          },
+          {
+            "predicted": 0.2085206416794856,
+            "observed": 0.13266583229036297
+          }
+        ]
+      },
+      "fit_seconds": 1.01700829109177
+    },
+    "logistic_regression_sigmoid_v2": {
+      "validation": {
+        "precision": 0.11430855315747403,
+        "recall": 0.500875656742557,
+        "f1": 0.1861373250894891,
+        "roc_auc": 0.6479643785435165,
+        "pr_auc_average_precision": 0.11320057771643537,
+        "brier_score": 0.07894471452062475,
+        "mean_probability": 0.17527336252931688,
+        "review_budgets": {
+          "5": {
+            "reviewed_orders": 400,
+            "late_orders_captured": 54,
+            "precision": 0.135,
+            "recall": 0.09457092819614711
+          },
+          "10": {
+            "reviewed_orders": 799,
+            "late_orders_captured": 106,
+            "precision": 0.13266583229036297,
+            "recall": 0.18563922942206654
+          },
+          "20": {
+            "reviewed_orders": 1598,
+            "late_orders_captured": 190,
+            "precision": 0.11889862327909888,
+            "recall": 0.3327495621716287
+          }
+        },
+        "precision_at_top_10_percent": 0.13266583229036297,
+        "top_10_percent_count": 799,
+        "confusion_matrix": [
+          [
+            5199,
+            2216
+          ],
+          [
+            285,
+            286
+          ]
+        ],
+        "confusion_matrix_order": [
+          [
+            "true_negative",
+            "false_positive"
+          ],
+          [
+            "false_negative",
+            "true_positive"
+          ]
+        ],
+        "threshold": 0.21023754104593098,
+        "samples": 7986,
+        "late_rate": 0.07150012521913349,
+        "flagged_fraction": 0.31329827197595794,
+        "calibration": [
+          {
+            "predicted": 0.049815320417527446,
+            "observed": 0.012515644555694618
+          },
+          {
+            "predicted": 0.08794273901142168,
+            "observed": 0.03629536921151439
+          },
+          {
+            "predicted": 0.11132728207732315,
+            "observed": 0.05513784461152882
+          },
+          {
+            "predicted": 0.13156937790798953,
+            "observed": 0.05381727158948686
+          },
+          {
+            "predicted": 0.15167070897550894,
+            "observed": 0.05388471177944862
+          },
+          {
+            "predicted": 0.17328854736794055,
+            "observed": 0.07384230287859825
+          },
+          {
+            "predicted": 0.19939351707866482,
+            "observed": 0.09147869674185463
+          },
+          {
+            "predicted": 0.22915947213667112,
+            "observed": 0.10012515644555695
+          },
+          {
+            "predicted": 0.26780487990263213,
+            "observed": 0.10526315789473684
+          },
+          {
+            "predicted": 0.3507982046201397,
+            "observed": 0.13266583229036297
+          }
+        ]
+      },
+      "fit_seconds": 1.048321207985282
+    },
+    "hist_gradient_boosting_raw_v2": {
+      "validation": {
+        "precision": 0.12596732588134135,
+        "recall": 0.5131348511383538,
+        "f1": 0.2022782188470832,
+        "roc_auc": 0.6608137998306552,
+        "pr_auc_average_precision": 0.13657080064751143,
+        "brier_score": 0.06517115922083207,
+        "mean_probability": 0.07727576884512266,
+        "review_budgets": {
+          "5": {
+            "reviewed_orders": 400,
+            "late_orders_captured": 77,
+            "precision": 0.1925,
+            "recall": 0.13485113835376533
+          },
+          "10": {
+            "reviewed_orders": 799,
+            "late_orders_captured": 135,
+            "precision": 0.16896120150187735,
+            "recall": 0.23642732049036777
+          },
+          "20": {
+            "reviewed_orders": 1598,
+            "late_orders_captured": 214,
+            "precision": 0.13391739674593242,
+            "recall": 0.37478108581436076
+          }
+        },
+        "precision_at_top_10_percent": 0.16896120150187735,
+        "top_10_percent_count": 799,
+        "confusion_matrix": [
+          [
+            5382,
+            2033
+          ],
+          [
+            278,
+            293
+          ]
+        ],
+        "confusion_matrix_order": [
+          [
+            "true_negative",
+            "false_positive"
+          ],
+          [
+            "false_negative",
+            "true_positive"
+          ]
+        ],
+        "threshold": 0.09386863120619658,
+        "samples": 7986,
+        "late_rate": 0.07150012521913349,
+        "flagged_fraction": 0.291259704482845,
+        "calibration": [
+          {
+            "predicted": 0.015626103215108707,
+            "observed": 0.01877346683354193
+          },
+          {
+            "predicted": 0.02399289553859955,
+            "observed": 0.03379224030037547
+          },
+          {
+            "predicted": 0.03212826242283364,
+            "observed": 0.06265664160401002
+          },
+          {
+            "predicted": 0.04175547453357594,
+            "observed": 0.03879849812265332
+          },
+          {
+            "predicted": 0.05254532653344745,
+            "observed": 0.05012531328320802
+          },
+          {
+            "predicted": 0.06577014893969065,
+            "observed": 0.0625782227784731
+          },
+          {
+            "predicted": 0.0822365826031498,
+            "observed": 0.07769423558897243
+          },
+          {
+            "predicted": 0.10362649752703951,
+            "observed": 0.10262828535669587
+          },
+          {
+            "predicted": 0.13764024621482077,
+            "observed": 0.09899749373433583
+          },
+          {
+            "predicted": 0.21743045297852218,
+            "observed": 0.16896120150187735
+          }
+        ]
+      },
+      "fit_seconds": 4.857153832912445
+    },
+    "hist_gradient_boosting_sigmoid_v2": {
+      "validation": {
+        "precision": 0.12596732588134135,
+        "recall": 0.5131348511383538,
+        "f1": 0.2022782188470832,
+        "roc_auc": 0.6608137998306552,
+        "pr_auc_average_precision": 0.13657080064751143,
+        "brier_score": 0.0731059352221443,
+        "mean_probability": 0.1480831419120615,
+        "review_budgets": {
+          "5": {
+            "reviewed_orders": 400,
+            "late_orders_captured": 77,
+            "precision": 0.1925,
+            "recall": 0.13485113835376533
+          },
+          "10": {
+            "reviewed_orders": 799,
+            "late_orders_captured": 135,
+            "precision": 0.16896120150187735,
+            "recall": 0.23642732049036777
+          },
+          "20": {
+            "reviewed_orders": 1598,
+            "late_orders_captured": 214,
+            "precision": 0.13391739674593242,
+            "recall": 0.37478108581436076
+          }
+        },
+        "precision_at_top_10_percent": 0.16896120150187735,
+        "top_10_percent_count": 799,
+        "confusion_matrix": [
+          [
+            5382,
+            2033
+          ],
+          [
+            278,
+            293
+          ]
+        ],
+        "confusion_matrix_order": [
+          [
+            "true_negative",
+            "false_positive"
+          ],
+          [
+            "false_negative",
+            "true_positive"
+          ]
+        ],
+        "threshold": 0.18326390273158055,
+        "samples": 7986,
+        "late_rate": 0.07150012521913349,
+        "flagged_fraction": 0.291259704482845,
+        "calibration": [
+          {
+            "predicted": 0.04198116721782851,
+            "observed": 0.01877346683354193
+          },
+          {
+            "predicted": 0.060358640691842214,
+            "observed": 0.03379224030037547
+          },
+          {
+            "predicted": 0.07698515295832167,
+            "observed": 0.06265664160401002
+          },
+          {
+            "predicted": 0.09556587047437529,
+            "observed": 0.03879849812265332
+          },
+          {
+            "predicted": 0.11528947356144174,
+            "observed": 0.05012531328320802
+          },
+          {
+            "predicted": 0.13816679989043598,
+            "observed": 0.0625782227784731
+          },
+          {
+            "predicted": 0.16506108249318563,
+            "observed": 0.07769423558897243
+          },
+          {
+            "predicted": 0.1978617021344633,
+            "observed": 0.10262828535669587
+          },
+          {
+            "predicted": 0.24596900687526788,
+            "observed": 0.09899749373433583
+          },
+          {
+            "predicted": 0.34360625517419224,
+            "observed": 0.16896120150187735
+          }
+        ]
+      },
+      "fit_seconds": 4.912343249889091
+    }
+  },
+  "baseline": {
+    "validation": {
+      "precision": 0.18369690011481057,
+      "recall": 0.28021015761821366,
+      "f1": 0.22191400832177532,
+      "roc_auc": 0.6531172317201488,
+      "pr_auc_average_precision": 0.1469660113690766,
+      "brier_score": 0.06967023451621762,
+      "mean_probability": 0.129954465590777,
+      "review_budgets": {
+        "5": {
+          "reviewed_orders": 400,
+          "late_orders_captured": 79,
+          "precision": 0.1975,
+          "recall": 0.138353765323993
+        },
+        "10": {
+          "reviewed_orders": 799,
+          "late_orders_captured": 144,
+          "precision": 0.1802252816020025,
+          "recall": 0.2521891418563923
+        },
+        "20": {
+          "reviewed_orders": 1598,
+          "late_orders_captured": 225,
+          "precision": 0.14080100125156444,
+          "recall": 0.39404553415061294
+        }
+      },
+      "precision_at_top_10_percent": 0.1802252816020025,
+      "top_10_percent_count": 799,
+      "confusion_matrix": [
+        [
+          6704,
+          711
+        ],
+        [
+          411,
+          160
+        ]
+      ],
+      "confusion_matrix_order": [
+        [
+          "true_negative",
+          "false_positive"
+        ],
+        [
+          "false_negative",
+          "true_positive"
+        ]
+      ],
+      "threshold": 0.2262445242161034,
+      "samples": 7986,
+      "late_rate": 0.07150012521913349,
+      "flagged_fraction": 0.10906586526421237,
+      "calibration": [
+        {
+          "predicted": 0.04380642894636847,
+          "observed": 0.0425531914893617
+        },
+        {
+          "predicted": 0.06077128873488389,
+          "observed": 0.02875
+        },
+        {
+          "predicted": 0.07324500145092838,
+          "observed": 0.03136762860727729
+        },
+        {
+          "predicted": 0.08514452672470182,
+          "observed": 0.06758448060075094
+        },
+        {
+          "predicted": 0.0985631776904641,
+          "observed": 0.05263157894736842
+        },
+        {
+          "predicted": 0.1144540367300046,
+          "observed": 0.06132665832290363
+        },
+        {
+          "predicted": 0.1334885280612746,
+          "observed": 0.06140350877192982
+        },
+        {
+          "predicted": 0.15913305566924862,
+          "observed": 0.08760951188986232
+        },
+        {
+          "predicted": 0.20202473022496018,
+          "observed": 0.10150375939849623
+        },
+        {
+          "predicted": 0.32891385324912914,
+          "observed": 0.1802252816020025
+        }
+      ]
+    },
+    "test": {
+      "precision": 0.102532427424336,
+      "recall": 0.17345872518286312,
+      "f1": 0.12888198757763975,
+      "roc_auc": 0.6482929573238179,
+      "pr_auc_average_precision": 0.0977121575544576,
+      "brier_score": 0.0684243888191671,
+      "mean_probability": 0.1243266794793045,
+      "review_budgets": {
+        "5": {
+          "reviewed_orders": 728,
+          "late_orders_captured": 77,
+          "precision": 0.10576923076923077,
+          "recall": 0.08045977011494253
+        },
+        "10": {
+          "reviewed_orders": 1456,
+          "late_orders_captured": 150,
+          "precision": 0.10302197802197802,
+          "recall": 0.15673981191222572
+        },
+        "20": {
+          "reviewed_orders": 2911,
+          "late_orders_captured": 302,
+          "precision": 0.1037444177258674,
+          "recall": 0.3155694879832811
+        }
+      },
+      "precision_at_top_10_percent": 0.10302197802197802,
+      "top_10_percent_count": 1456,
+      "confusion_matrix": [
+        [
+          12141,
+          1453
+        ],
+        [
+          791,
+          166
+        ]
+      ],
+      "confusion_matrix_order": [
+        [
+          "true_negative",
+          "false_positive"
+        ],
+        [
+          "false_negative",
+          "true_positive"
+        ]
+      ],
+      "threshold": 0.2262445242161034,
+      "samples": 14551,
+      "late_rate": 0.06576867569239228,
+      "flagged_fraction": 0.11126383066455914,
+      "calibration": [
+        {
+          "predicted": 0.03686437876638323,
+          "observed": 0.006868131868131868
+        },
+        {
+          "predicted": 0.052891107076251845,
+          "observed": 0.01168384879725086
+        },
+        {
+          "predicted": 0.06621842125132729,
+          "observed": 0.03848797250859107
+        },
+        {
+          "predicted": 0.07930366138457046,
+          "observed": 0.056357388316151204
+        },
+        {
+          "predicted": 0.09158486500001552,
+          "observed": 0.09072164948453608
+        },
+        {
+          "predicted": 0.10531082965710173,
+          "observed": 0.07903780068728522
+        },
+        {
+          "predicted": 0.12346697461234844,
+          "observed": 0.07972508591065292
+        },
+        {
+          "predicted": 0.15172093318307228,
+          "observed": 0.08728522336769759
+        },
+        {
+          "predicted": 0.19848056517387952,
+          "observed": 0.10446735395189004
+        },
+        {
+          "predicted": 0.3374851702349769,
+          "observed": 0.10309278350515463
+        }
+      ]
+    }
+  },
+  "baseline_without_sigmoid_validation_only": {
+    "precision": 0.18369690011481057,
+    "recall": 0.28021015761821366,
+    "f1": 0.22191400832177532,
+    "roc_auc": 0.6531172317201488,
+    "pr_auc_average_precision": 0.1469660113690766,
+    "brier_score": 0.06481706617083907,
+    "mean_probability": 0.05981370410561434,
+    "review_budgets": {
+      "5": {
+        "reviewed_orders": 400,
+        "late_orders_captured": 79,
+        "precision": 0.1975,
+        "recall": 0.138353765323993
+      },
+      "10": {
+        "reviewed_orders": 799,
+        "late_orders_captured": 144,
+        "precision": 0.1802252816020025,
+        "recall": 0.2521891418563923
+      },
+      "20": {
+        "reviewed_orders": 1598,
+        "late_orders_captured": 225,
+        "precision": 0.14080100125156444,
+        "recall": 0.39404553415061294
+      }
+    },
+    "precision_at_top_10_percent": 0.1802252816020025,
+    "top_10_percent_count": 799,
+    "confusion_matrix": [
+      [
+        6704,
+        711
+      ],
+      [
+        411,
+        160
+      ]
+    ],
+    "confusion_matrix_order": [
+      [
+        "true_negative",
+        "false_positive"
+      ],
+      [
+        "false_negative",
+        "true_positive"
+      ]
+    ],
+    "threshold": 0.11311594194864784,
+    "samples": 7986,
+    "late_rate": 0.07150012521913349,
+    "flagged_fraction": 0.10906586526421237,
+    "calibration": [
+      {
+        "predicted": 0.014064161479503283,
+        "observed": 0.0425531914893617
+      },
+      {
+        "predicted": 0.020945603701105923,
+        "observed": 0.02875
+      },
+      {
+        "predicted": 0.02638904210416898,
+        "observed": 0.03136762860727729
+      },
+      {
+        "predicted": 0.031842430445063664,
+        "observed": 0.06758448060075094
+      },
+      {
+        "predicted": 0.03828377645624715,
+        "observed": 0.05263157894736842
+      },
+      {
+        "predicted": 0.046280051147080156,
+        "observed": 0.06132665832290363
+      },
+      {
+        "predicted": 0.05638235989299751,
+        "observed": 0.06140350877192982
+      },
+      {
+        "predicted": 0.07085753490427528,
+        "observed": 0.08760951188986232
+      },
+      {
+        "predicted": 0.09729214772818932,
+        "observed": 0.10150375939849623
+      },
+      {
+        "predicted": 0.19578057893989306,
+        "observed": 0.1802252816020025
+      }
+    ]
+  },
+  "challenger": {
+    "validation": {
+      "precision": 0.12596732588134135,
+      "recall": 0.5131348511383538,
+      "f1": 0.2022782188470832,
+      "roc_auc": 0.6608137998306552,
+      "pr_auc_average_precision": 0.13657080064751143,
+      "brier_score": 0.06517115922083207,
+      "mean_probability": 0.07727576884512266,
+      "review_budgets": {
+        "5": {
+          "reviewed_orders": 400,
+          "late_orders_captured": 77,
+          "precision": 0.1925,
+          "recall": 0.13485113835376533
+        },
+        "10": {
+          "reviewed_orders": 799,
+          "late_orders_captured": 135,
+          "precision": 0.16896120150187735,
+          "recall": 0.23642732049036777
+        },
+        "20": {
+          "reviewed_orders": 1598,
+          "late_orders_captured": 214,
+          "precision": 0.13391739674593242,
+          "recall": 0.37478108581436076
+        }
+      },
+      "precision_at_top_10_percent": 0.16896120150187735,
+      "top_10_percent_count": 799,
+      "confusion_matrix": [
+        [
+          5382,
+          2033
+        ],
+        [
+          278,
+          293
+        ]
+      ],
+      "confusion_matrix_order": [
+        [
+          "true_negative",
+          "false_positive"
+        ],
+        [
+          "false_negative",
+          "true_positive"
+        ]
+      ],
+      "threshold": 0.09386863120619658,
+      "samples": 7986,
+      "late_rate": 0.07150012521913349,
+      "flagged_fraction": 0.291259704482845,
+      "calibration": [
+        {
+          "predicted": 0.015626103215108707,
+          "observed": 0.01877346683354193
+        },
+        {
+          "predicted": 0.02399289553859955,
+          "observed": 0.03379224030037547
+        },
+        {
+          "predicted": 0.03212826242283364,
+          "observed": 0.06265664160401002
+        },
+        {
+          "predicted": 0.04175547453357594,
+          "observed": 0.03879849812265332
+        },
+        {
+          "predicted": 0.05254532653344745,
+          "observed": 0.05012531328320802
+        },
+        {
+          "predicted": 0.06577014893969065,
+          "observed": 0.0625782227784731
+        },
+        {
+          "predicted": 0.0822365826031498,
+          "observed": 0.07769423558897243
+        },
+        {
+          "predicted": 0.10362649752703951,
+          "observed": 0.10262828535669587
+        },
+        {
+          "predicted": 0.13764024621482077,
+          "observed": 0.09899749373433583
+        },
+        {
+          "predicted": 0.21743045297852218,
+          "observed": 0.16896120150187735
+        }
+      ]
+    },
+    "test": {
+      "precision": 0.13009364717792965,
+      "recall": 0.5370950888192267,
+      "f1": 0.20945395273023634,
+      "roc_auc": 0.7276030638632294,
+      "pr_auc_average_precision": 0.12774304142032555,
+      "brier_score": 0.05992293250146694,
+      "mean_probability": 0.07315404946285982,
+      "review_budgets": {
+        "5": {
+          "reviewed_orders": 728,
+          "late_orders_captured": 116,
+          "precision": 0.15934065934065933,
+          "recall": 0.12121212121212122
+        },
+        "10": {
+          "reviewed_orders": 1456,
+          "late_orders_captured": 212,
+          "precision": 0.14560439560439561,
+          "recall": 0.22152560083594566
+        },
+        "20": {
+          "reviewed_orders": 2911,
+          "late_orders_captured": 377,
+          "precision": 0.12950875987633115,
+          "recall": 0.3939393939393939
+        }
+      },
+      "precision_at_top_10_percent": 0.14560439560439561,
+      "top_10_percent_count": 1456,
+      "confusion_matrix": [
+        [
+          10157,
+          3437
+        ],
+        [
+          443,
+          514
+        ]
+      ],
+      "confusion_matrix_order": [
+        [
+          "true_negative",
+          "false_positive"
+        ],
+        [
+          "false_negative",
+          "true_positive"
+        ]
+      ],
+      "threshold": 0.09386863120619658,
+      "samples": 14551,
+      "late_rate": 0.06576867569239228,
+      "flagged_fraction": 0.2715277300529173,
+      "calibration": [
+        {
+          "predicted": 0.012688866340237852,
+          "observed": 0.008241758241758242
+        },
+        {
+          "predicted": 0.020473109423890162,
+          "observed": 0.006185567010309278
+        },
+        {
+          "predicted": 0.028004863060307986,
+          "observed": 0.015120274914089347
+        },
+        {
+          "predicted": 0.03658622725916909,
+          "observed": 0.03161512027491409
+        },
+        {
+          "predicted": 0.047921018006733845,
+          "observed": 0.05085910652920962
+        },
+        {
+          "predicted": 0.06245123678982285,
+          "observed": 0.0570446735395189
+        },
+        {
+          "predicted": 0.07893112317650035,
+          "observed": 0.10309278350515463
+        },
+        {
+          "predicted": 0.0991967579229999,
+          "observed": 0.12646048109965635
+        },
+        {
+          "predicted": 0.1324111137659195,
+          "observed": 0.1134020618556701
+        },
+        {
+          "predicted": 0.21291773570990485,
+          "observed": 0.1457044673539519
+        }
+      ]
+    }
+  },
+  "training_prevalence_constant": {
+    "validation": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "roc_auc": 0.5,
+      "pr_auc_average_precision": 0.07150012521913349,
+      "brier_score": 0.06663960834691078,
+      "mean_probability": 0.05563346097837227,
+      "review_budgets": {
+        "5": {
+          "reviewed_orders": 400,
+          "late_orders_captured": 12,
+          "precision": 0.03,
+          "recall": 0.021015761821366025
+        },
+        "10": {
+          "reviewed_orders": 799,
+          "late_orders_captured": 30,
+          "precision": 0.03754693366708386,
+          "recall": 0.05253940455341506
+        },
+        "20": {
+          "reviewed_orders": 1598,
+          "late_orders_captured": 72,
+          "precision": 0.04505632040050062,
+          "recall": 0.12609457092819615
+        }
+      },
+      "precision_at_top_10_percent": 0.03754693366708386,
+      "top_10_percent_count": 799,
+      "confusion_matrix": [
+        [
+          7415,
+          0
+        ],
+        [
+          571,
+          0
+        ]
+      ],
+      "confusion_matrix_order": [
+        [
+          "true_negative",
+          "false_positive"
+        ],
+        [
+          "false_negative",
+          "true_positive"
+        ]
+      ],
+      "threshold": 0.5,
+      "samples": 7986,
+      "late_rate": 0.07150012521913349,
+      "flagged_fraction": 0.0,
+      "calibration": [
+        {
+          "predicted": 0.05563346097836867,
+          "observed": 0.07150012521913349
+        }
+      ]
+    },
+    "test": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "roc_auc": 0.5,
+      "pr_auc_average_precision": 0.06576867569239228,
+      "brier_score": 0.06154587956736049,
+      "mean_probability": 0.05563346097837227,
+      "review_budgets": {
+        "5": {
+          "reviewed_orders": 728,
+          "late_orders_captured": 11,
+          "precision": 0.01510989010989011,
+          "recall": 0.011494252873563218
+        },
+        "10": {
+          "reviewed_orders": 1456,
+          "late_orders_captured": 15,
+          "precision": 0.010302197802197802,
+          "recall": 0.01567398119122257
+        },
+        "20": {
+          "reviewed_orders": 2911,
+          "late_orders_captured": 31,
+          "precision": 0.010649261422191686,
+          "recall": 0.03239289446185998
+        }
+      },
+      "precision_at_top_10_percent": 0.010302197802197802,
+      "top_10_percent_count": 1456,
+      "confusion_matrix": [
+        [
+          13594,
+          0
+        ],
+        [
+          957,
+          0
+        ]
+      ],
+      "confusion_matrix_order": [
+        [
+          "true_negative",
+          "false_positive"
+        ],
+        [
+          "false_negative",
+          "true_positive"
+        ]
+      ],
+      "threshold": 0.5,
+      "samples": 14551,
+      "late_rate": 0.06576867569239228,
+      "flagged_fraction": 0.0,
+      "calibration": [
+        {
+          "predicted": 0.055633460978363046,
+          "observed": 0.06576867569239228
+        }
+      ]
+    }
+  },
+  "brier_skill_vs_training_constant": {
+    "baseline": -0.11176230318194169,
+    "challenger": 0.026369711137481877
+  },
+  "test_prevalence_oracle_brier_descriptive_only": 0.061443156990061205,
+  "feature_importance": [
+    {
+      "feature": "route_promise_slack_days",
+      "average_precision_decrease": 0.03376738215505775,
+      "std": 0.002801865057801882
+    },
+    {
+      "feature": "distance_km",
+      "average_precision_decrease": 0.02928022010026156,
+      "std": 0.004504525171687798
+    },
+    {
+      "feature": "route_history_delivery_days",
+      "average_precision_decrease": 0.013502647995350864,
+      "std": 0.002706118234842153
+    },
+    {
+      "feature": "freight_value",
+      "average_precision_decrease": 0.009051258117922692,
+      "std": 0.0011876762755427678
+    },
+    {
+      "feature": "seller_history_delivery_days",
+      "average_precision_decrease": 0.008198321207655734,
+      "std": 0.00017834534159727466
+    },
+    {
+      "feature": "route_history_count",
+      "average_precision_decrease": 0.006675889109948943,
+      "std": 0.005860567626906413
+    },
+    {
+      "feature": "seller_history_count",
+      "average_precision_decrease": 0.0029493186528037896,
+      "std": 0.0009620059284346505
+    },
+    {
+      "feature": "region_history_count",
+      "average_precision_decrease": 0.0026185929497772736,
+      "std": 0.0005652872377051449
+    },
+    {
+      "feature": "region_history_late_rate",
+      "average_precision_decrease": 0.002009589250137611,
+      "std": 0.0008131982826472817
+    },
+    {
+      "feature": "total_volume_cm3",
+      "average_precision_decrease": 0.0019946567836123946,
+      "std": 0.0013886363759111203
+    },
+    {
+      "feature": "seller_promise_slack_days",
+      "average_precision_decrease": 0.001435680378014767,
+      "std": 0.0017844383021095173
+    },
+    {
+      "feature": "purchase_weekday",
+      "average_precision_decrease": 0.001268318820634426,
+      "std": 0.001839721957265214
+    },
+    {
+      "feature": "purchase_hour",
+      "average_precision_decrease": 0.0007326520041872481,
+      "std": 0.0009862148727631942
+    },
+    {
+      "feature": "seller_count",
+      "average_precision_decrease": 0.00028352787457572304,
+      "std": 0.0007908938653016784
+    },
+    {
+      "feature": "purchase_year",
+      "average_precision_decrease": 0.0,
+      "std": 0.0
+    },
+    {
+      "feature": "category_count",
+      "average_precision_decrease": 0.0,
+      "std": 0.0
+    },
+    {
+      "feature": "seller_state_count",
+      "average_precision_decrease": 0.0,
+      "std": 0.0
+    },
+    {
+      "feature": "interstate_item_fraction",
+      "average_precision_decrease": 0.0,
+      "std": 0.0
+    },
+    {
+      "feature": "item_count",
+      "average_precision_decrease": -0.00044259600267282373,
+      "std": 0.001413137031323508
+    },
+    {
+      "feature": "primary_category",
+      "average_precision_decrease": -0.00093564857346079,
+      "std": 0.0008402540374952694
+    },
+    {
+      "feature": "primary_route",
+      "average_precision_decrease": -0.0013285951524056455,
+      "std": 0.000384423443356971
+    },
+    {
+      "feature": "freight_value_ratio",
+      "average_precision_decrease": -0.0018419192642214477,
+      "std": 0.0009447954994657448
+    },
+    {
+      "feature": "total_weight_g",
+      "average_precision_decrease": -0.0028099780825642656,
+      "std": 0.002718094243860228
+    },
+    {
+      "feature": "primary_seller_state",
+      "average_precision_decrease": -0.002835318343375956,
+      "std": 0.0003845876935450049
+    },
+    {
+      "feature": "seller_smoothed_late_rate",
+      "average_precision_decrease": -0.0029630705551583203,
+      "std": 0.0016284928856953595
+    },
+    {
+      "feature": "items_value",
+      "average_precision_decrease": -0.003964100050658767,
+      "std": 0.005255624690420305
+    },
+    {
+      "feature": "promised_lead_days",
+      "average_precision_decrease": -0.004331559660222889,
+      "std": 0.0007264560488286775
+    },
+    {
+      "feature": "route_smoothed_late_rate",
+      "average_precision_decrease": -0.004357968768161108,
+      "std": 0.0015743557867790026
+    },
+    {
+      "feature": "seller_history_late_rate",
+      "average_precision_decrease": -0.007501616811213252,
+      "std": 0.00334916946486552
+    },
+    {
+      "feature": "seller_history_fulfillment_days",
+      "average_precision_decrease": -0.007632931451810265,
+      "std": 0.006329024125168947
+    },
+    {
+      "feature": "customer_state",
+      "average_precision_decrease": -0.015199116172693622,
+      "std": 0.003570776551724275
+    },
+    {
+      "feature": "purchase_month",
+      "average_precision_decrease": -0.017950859389853524,
+      "std": 0.01018534245875835
+    }
+  ],
+  "promotion_checks": {
+    "validation_top10_not_worse": false,
+    "validation_ap_not_worse": false,
+    "validation_brier_beats_constant": true,
+    "test_top10_relative_gain_20_percent": true,
+    "test_ap_not_worse": true,
+    "test_roc_auc_not_worse": true,
+    "test_brier_not_worse": true,
+    "test_brier_beats_constant": true,
+    "test_recall_at_5_not_materially_worse": true,
+    "test_recall_at_20_not_materially_worse": true
+  },
+  "qualified": false,
+  "promoted": false,
+  "duration_seconds": 31.95154737494886
+}

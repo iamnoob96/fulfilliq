@@ -22,6 +22,88 @@ Training-period eligible count: 58,954. After an additional internal purge, 37,0
 
 Observation availability uses delivery plus one day; maturity uses estimate plus 14 days. Validation begins 13 April 2018, test begins 20 June 2018, and the assumed observation cutoff is 17 October 2018. No preprocessing or estimator fits test rows. This is exploratory: initial test diagnostics were inspected during engineering, so it is not a blind external benchmark.
 
+## Delivery-risk optimization sprint (same-day follow-up)
+
+The original benchmark above is retained. The bounded follow-up ran from committed
+code `1db8037`, in 31.95 seconds on the same environment and exact source hashes.
+Full-precision outputs, frozen membership hashes, calibration bins, validation
+comparisons and promotion gates are in
+[risk-sprint-20261024.json](results/risk-sprint-20261024.json); the predeclared
+method and feature definitions are in [RISK_SPRINT.md](RISK_SPRINT.md).
+
+Two fixed estimators, each raw and sigmoid calibrated, were compared using
+validation only. The chosen challenger is **raw histogram gradient boosting with
+schema 2**, version `20261024T035136-9caf890e`. Schema 2 adds seller/route delivery
+duration and promise slack, availability-indexed smoothed rates, route counts,
+state-pair geography, interstate fraction, and freight/value ratio. Signed slack
+and calendar/rate features avoid the original universal log transform.
+
+| Validation candidate | AP | Precision at 10% | Brier |
+| --- | ---: | ---: | ---: |
+| Original calibrated HGB | 0.14697 | 0.18023 | 0.06967 |
+| Schema 2 logistic, raw | 0.11320 | 0.13267 | 0.06621 |
+| Schema 2 logistic, sigmoid | 0.11320 | 0.13267 | 0.07894 |
+| Schema 2 HGB, raw (selected challenger) | 0.13657 | 0.16896 | 0.06517 |
+| Schema 2 HGB, sigmoid | 0.13657 | 0.16896 | 0.07311 |
+
+Only the selected challenger received a new held-out evaluation. Test membership
+is unchanged: **14,551 orders, 957 late**. No test-driven iteration followed.
+
+| Held-out metric | Original active model | Selected challenger |
+| --- | ---: | ---: |
+| Precision (validation F1 threshold) | 0.10253 | 0.13009 |
+| Recall | 0.17346 | 0.53710 |
+| F1 | 0.12888 | 0.20945 |
+| ROC-AUC | 0.64829 | 0.72760 |
+| AP (PR-AUC convention) | 0.09771 | 0.12774 |
+| Brier score | 0.06842 | 0.05992 |
+| Mean predicted probability | 0.12433 | 0.07315 |
+| Actual late prevalence | 0.06577 | 0.06577 |
+| Brier skill vs training constant | -0.11176 | 0.02637 |
+| Validation-selected threshold | 0.22624 | 0.09387 |
+
+| Review capacity | Reviewed | Baseline precision / recall | Challenger precision / recall |
+| --- | ---: | ---: | ---: |
+| Highest-risk 5% | 728 | 0.10577 / 0.08046 | 0.15934 / 0.12121 |
+| Highest-risk 10% | 1,456 | 0.10302 / 0.15674 | 0.14560 / 0.22153 |
+| Highest-risk 20% | 2,911 | 0.10374 / 0.31557 | 0.12951 / 0.39394 |
+
+The challenger captures **212 versus 150** late orders within 1,456 reviews
+(41.3% relative precision gain). Its F1 threshold flags approximately 27.2% of
+orders, so it should not be confused with a 10% review policy. Budget metrics
+rank the cohort independently of that threshold; ties use stable source order.
+
+**Promotion decision: retain the original active model.** The challenger passes
+all eight test/calibration gates but fails both validation ranking gates: AP
+0.13657 versus 0.14697 and top-decile precision 0.16896 versus 0.18023. The
+better test result does not override that rule. It is saved separately; the
+active pointer remains `20261024T031015-f87ea646`. No deployed prediction
+improvement is claimed.
+
+### Calibration investigation and remaining weaknesses
+
+Base-training prevalence is 5.56%, the reserved January–March calibration period
+12.32%, validation 7.15%, and the final test 6.58%. On validation, removing only
+the original model's sigmoid leaves AP unchanged at 0.14697 but lowers Brier
+from 0.06967 to **0.06482**. This supports calibration-period drift as a problem;
+it does not prove the cause of the change. That ablation was validation-only and
+was not subsequently selected or tested as another challenger.
+
+The deployable training-prevalence constant has test Brier **0.06155**; the
+descriptive test-prevalence oracle is **0.06144** and is never used for fitting.
+The challenger improves probability error modestly against the constant, but
+ranking remains weak and seasonal generalization remains unresolved. Route
+promise slack, distance, and historical route delivery duration lead the
+challenger's validation permutation importance; correlated-feature importance
+does not establish causality or isolate which change produced improvement.
+
+The most valuable next experiment is rolling-origin validation across several
+seasons with recent, maturity-safe calibration. Freeze a new future holdout
+before further tuning: this existing test cohort has now been inspected and
+cannot serve as independent evidence for another iteration. Static attribute
+history, canceled-order selection bias, sparse routes and absent carrier-service
+information remain limitations. No intervention benefit is established.
+
 ## Operational observations
 
 The exact timestamp definition yields **7,826 / 96,470 eligible deliveries late (8.1124%)**. The legacy calendar-day definition remains **6,534 / 96,470 (6.7731%)**.
