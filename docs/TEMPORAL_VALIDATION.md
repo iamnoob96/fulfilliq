@@ -63,3 +63,17 @@ Feature drift uses purchase cohorts (including unlabeled orders), separately fro
 the matured metric population. Report seller activity/new-seller exposure,
 numeric distributions and missingness, train-binned population stability indices,
 and state/category distribution changes. These are associations, not causes.
+
+## Initial measured run
+
+The first complete run from code `32b5e77` completed 12 valid folds, excluded two
+windows, and had no fitting failures. No calibration policy passed every
+consistency gate; sigmoid was the least-worst ranking-safe policy. Original
+outputs are preserved in [structured results](results/temporal-20261024-v1.json)
+and the [generated summary](results/temporal-20261024-v1.md).
+
+Subsequent reporting checks add disjoint maturity-exclusion accounting and an
+isotonic comparison on exactly matched windows. Isotonic's nine-window mean
+must not be compared directly with raw/sigmoid's twelve-window mean. These
+reporting improvements do not change model configurations, predictions or the
+predeclared advisory gates.

@@ -20,13 +20,13 @@ from fulfilliq.modeling.drift import feature_drift, probability_metrics, summari
 from fulfilliq.modeling.evaluation import choose_threshold
 from fulfilliq.modeling.experiment import membership_hash, preprocessing_v2
 from fulfilliq.modeling.inference import RiskService
-from fulfilliq.modeling.rolling import RollingConfig, rolling_folds
+from fulfilliq.modeling.rolling import RollingConfig, RollingFold, rolling_folds
 from fulfilliq.modeling.training import SEED, model_candidates
 
 logger = logging.getLogger(__name__)
 
 
-def fit_fold(fold, config: RollingConfig, *, quick=False) -> dict:
+def fit_fold(fold: RollingFold, config: RollingConfig, *, quick=False) -> dict:
     start = perf_counter()
     estimator = model_candidates(quick=quick)["hist_gradient_boosting"]
     pipeline = Pipeline([("preprocess", preprocessing_v2()), ("classifier", estimator)])
@@ -115,6 +115,18 @@ def temporal_markdown(report: dict) -> str:
             lines.append(
                 f"| {window} | {metrics['samples']} | {metrics['late_rate']:.4f} | {name} | {metrics['pr_auc_average_precision']:.4f} | {metrics['roc_auc']:.4f} | {metrics['f1']:.4f} | {metrics['brier_score']:.5f} | {metrics['ece_10_equal_width']:.4f} | {metrics['review_budgets']['10']['precision']:.4f} | {metrics['review_budgets']['10']['recall']:.4f} |"
             )
+    matched = report["summary"]["matched_isotonic_comparison"]
+    lines += [
+        "",
+        f"Isotonic matched comparison: {matched['folds']} common windows (do not compare unequal-coverage means directly).",
+        "",
+        "| Policy | Matched mean Brier | Matched mean ECE | Matched mean AP | Matched P@10% |",
+        "| --- | ---: | ---: | ---: | ---: |",
+    ]
+    for name, row in matched["policies"].items():
+        lines.append(
+            f"| {name} | {row['brier_score']:.5f} | {row['ece_10_equal_width']:.5f} | {row['pr_auc_average_precision']:.4f} | {row['precision_at_top_10_percent']:.4f} |"
+        )
     lines += [
         "",
         "## Across-window stability",

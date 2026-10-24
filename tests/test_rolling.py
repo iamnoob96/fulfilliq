@@ -43,6 +43,16 @@ def test_windows_are_chronological_disjoint_mature_and_protected(training_frame)
         evaluated.update(fold.evaluation.index)
         # Outcomes can mature after evaluation ends; fitting never uses them early.
         assert fold.evaluation.label_available_at.max() > pd.Timestamp(m["evaluation_end"])
+        for audit in m["audits"].values():
+            assert audit["purchase_cohort"] == audit["eligible"] + sum(
+                audit[key]
+                for key in (
+                    "unlabeled",
+                    "invalid_labeled_timestamps_or_target",
+                    "outcome_not_observable",
+                    "promise_not_mature",
+                )
+            )
 
 
 def test_strict_availability_promise_maturity_and_unresolved(training_frame):
@@ -103,3 +113,24 @@ def test_prediction_time_contract(training_frame):
     frame = training_frame.assign(prediction_at=training_frame.purchased_at + pd.Timedelta(days=1))
     with pytest.raises(ValueError, match="prediction timestamps"):
         rolling_folds(frame, config(), protected_start="2018-01-01", as_of="2018-03-01")
+
+
+def test_invalid_labeled_times_and_nonbinary_targets_are_excluded(training_frame):
+    frame = training_frame.iloc[:4].copy()
+    frame.loc[frame.index[0], "target_is_late"] = 0.5
+    frame.loc[frame.index[1], "estimated_at"] = frame.purchased_at.iloc[1] - pd.Timedelta(days=1)
+    frame.loc[frame.index[2], "label_available_at"] = frame.delivered_at.iloc[2] - pd.Timedelta(
+        days=1
+    )
+    assert list(eligible_at(frame, pd.Timestamp("2018-01-01"), 2).index) == [frame.index[3]]
+
+
+def test_zero_embargo_and_duplicate_id_rejection(training_frame):
+    folds, _ = rolling_folds(
+        training_frame, config(gap_days=0), protected_start="2018-01-01", as_of="2018-04-01"
+    )
+    assert folds[0].metadata["train_end"] == folds[0].metadata["calibration_start"]
+    assert folds[0].metadata["calibration_end"] == folds[0].metadata["evaluation_start"]
+    frame = pd.concat([training_frame, training_frame.iloc[:1]])
+    with pytest.raises(ValueError, match="unique"):
+        rolling_folds(frame, config(), protected_start="2018-01-01", as_of="2018-04-01")

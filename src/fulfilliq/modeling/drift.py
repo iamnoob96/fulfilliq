@@ -195,9 +195,34 @@ def summarize_policies(folds: list[dict], failed_folds: int = 0) -> dict:
     qualified = [
         name for name in eligible if summaries[name]["qualifies_for_advisory_recommendation"]
     ]
+    common = [
+        fold
+        for fold in folds
+        if all(name in fold["policies"] for name in ("raw", "sigmoid", "isotonic"))
+    ]
+    matched = {
+        "folds": len(common),
+        "fold_ids": [fold.get("fold_id") for fold in common],
+        "interpretation": "Same supported windows for each method; descriptive only. Primary recommendation still requires all valid folds.",
+        "policies": {
+            name: {
+                key: float(np.mean([fold["policies"][name][key] for fold in common]))
+                for key in (
+                    "brier_score",
+                    "ece_10_equal_width",
+                    "roc_auc",
+                    "pr_auc_average_precision",
+                    "precision_at_top_10_percent",
+                )
+            }
+            for name in ("raw", "sigmoid", "isotonic")
+            if common
+        },
+    }
     return {
         "policies": summaries,
         "recommended_policy": max(qualified, key=key) if qualified else None,
         "least_worst_ranking_safe_policy": max(eligible, key=key) if eligible else None,
+        "matched_isotonic_comparison": matched,
         "promotion": "Not permitted by this evaluation command; existing validation gates remain required",
     }

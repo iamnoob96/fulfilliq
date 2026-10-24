@@ -90,6 +90,7 @@ def test_advisory_policy_requires_every_window_and_ranking_safety():
     folds = [{"policies": {"raw": raw, "sigmoid": bad}} for _ in range(3)]
     summary = summarize_policies(folds)
     assert summary["recommended_policy"] == "raw"
+    assert summary["matched_isotonic_comparison"]["folds"] == 0
     assert summarize_policies(folds, failed_folds=1)["recommended_policy"] is None
     folds[-1]["policies"]["raw"] = bad
     assert summarize_policies(folds)["recommended_policy"] is None
@@ -99,6 +100,11 @@ def test_advisory_policy_requires_every_window_and_ranking_safety():
         {"policies": {"raw": raw}},
     ]
     assert not summarize_policies(incomplete)["policies"]["isotonic"]["ranking_safe_full_coverage"]
+    matched = summarize_policies(incomplete)["matched_isotonic_comparison"]
+    assert matched["folds"] == 0  # no sigmoid: do not fabricate a common comparison
+    complete = [{"fold_id": "one", "policies": {"raw": raw, "isotonic": raw, "sigmoid": bad}}]
+    matched = summarize_policies(complete)["matched_isotonic_comparison"]
+    assert matched["folds"] == 1 and set(matched["policies"]) == {"raw", "sigmoid", "isotonic"}
     degraded = {**raw, "top10_precision_delta_vs_raw": -0.02}
     assert not summarize_policies([{"policies": {"isotonic": degraded}}] * 3)["policies"][
         "isotonic"

@@ -43,18 +43,27 @@ class RollingFold:
     metadata: dict
 
 
+def coherent_labels(cohort: pd.DataFrame) -> pd.Series:
+    return (
+        cohort.target_is_late.isin([0, 1])
+        & cohort.delivered_at.ge(cohort.purchased_at)
+        & cohort.estimated_at.ge(cohort.purchased_at)
+        & cohort.label_available_at.ge(cohort.delivered_at)
+    )
+
+
 def eligible_at(cohort: pd.DataFrame, cutoff: pd.Timestamp, maturity_days: int) -> pd.DataFrame:
     """Strict availability and promise maturity; delivery time never defines purchase cohorts."""
     return cohort.loc[
-        cohort.target_is_late.notna()
-        & cohort.delivered_at.ge(cohort.purchased_at)
-        & cohort.label_available_at.ge(cohort.delivered_at)
+        coherent_labels(cohort)
         & cohort.label_available_at.lt(cutoff)
         & (cohort.estimated_at + pd.Timedelta(days=maturity_days)).lt(cutoff)
     ].copy()
 
 
-def rolling_folds(frame: pd.DataFrame, config: RollingConfig, *, protected_start, as_of):
+def rolling_folds(
+    frame: pd.DataFrame, config: RollingConfig, *, protected_start, as_of
+) -> tuple[list[RollingFold], list[dict]]:
     protected_start, as_of = pd.Timestamp(protected_start), pd.Timestamp(as_of)
     if pd.isna(protected_start) or pd.isna(as_of):
         raise ValueError("Protected boundary and observation cutoff must be valid timestamps")
@@ -123,6 +132,10 @@ def rolling_folds(frame: pd.DataFrame, config: RollingConfig, *, protected_start
         }
         audits, reasons = {}, []
         for name, subset in subsets.items():
+            context, cutoff = contexts[name], cutoffs[name]
+            coherent = coherent_labels(context)
+            observed = context.label_available_at.lt(cutoff)
+            promise_mature = (context.estimated_at + delta(config.maturity_days)).lt(cutoff)
             labels = subset.target_is_late.astype(int)
             positives, negatives = int(labels.sum()), int((labels == 0).sum())
             audits[name] = {
@@ -130,12 +143,35 @@ def rolling_folds(frame: pd.DataFrame, config: RollingConfig, *, protected_start
                 "eligible": len(subset),
                 "excluded": len(contexts[name]) - len(subset),
                 "unlabeled": int(contexts[name].target_is_late.isna().sum()),
+                "invalid_labeled_timestamps_or_target": int(
+                    (context.target_is_late.notna() & ~coherent).sum()
+                ),
+                "outcome_not_observable": int((coherent & ~observed).sum()),
+                "promise_not_mature": int((coherent & observed & ~promise_mature).sum()),
                 "positives": positives,
                 "negatives": negatives,
+                "first_eligible_purchase": subset.purchased_at.min().isoformat()
+                if len(subset)
+                else None,
+                "last_eligible_purchase": subset.purchased_at.max().isoformat()
+                if len(subset)
+                else None,
+                "last_delivery": subset.delivered_at.max().isoformat() if len(subset) else None,
                 "last_label_available": subset.label_available_at.max().isoformat()
                 if len(subset)
                 else None,
             }
+            audit = audits[name]
+            if audit["excluded"] != sum(
+                audit[key]
+                for key in (
+                    "unlabeled",
+                    "invalid_labeled_timestamps_or_target",
+                    "outcome_not_observable",
+                    "promise_not_mature",
+                )
+            ):
+                raise ValueError("Maturity exclusion accounting does not reconcile")
             if (
                 len(subset) < config.min_observations
                 or min(positives, negatives) < config.min_positives
