@@ -1,17 +1,33 @@
-from fastapi import FastAPI, Response
+from fastapi import FastAPI, Request, Response
+from fastapi.responses import JSONResponse
+from sqlalchemy.exc import SQLAlchemyError
 
 from fulfilliq import __version__
+from fulfilliq.analytics.store import InsightUnavailable
 from fulfilliq.api.health import database_status
+from fulfilliq.api.intelligence_schemas import ErrorResponse
+from fulfilliq.api.routes import intelligence_router
 from fulfilliq.api.schemas import HealthResponse
 from fulfilliq.config import Settings
+from fulfilliq.logging_config import configure_logging
+from fulfilliq.modeling.inference import ModelUnavailable
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
+    configure_logging()
     settings = settings or Settings()
     app = FastAPI(
         title="FulfillIQ",
         version=__version__,
-        description="Phase 1: Olist ingestion and a historical logistics data foundation.",
+        description="Olist logistics intelligence: purchase-time risk, historical fulfillment "
+        "analytics, data mining and Portuguese reviews. Train/build offline with the CLI.",
+        responses={
+            503: {
+                "model": ErrorResponse,
+                "description": "Required database/model/report unavailable",
+            },
+            422: {"model": ErrorResponse, "description": "Invalid input or incoherent date filter"},
+        },
     )
 
     @app.get(
@@ -30,6 +46,27 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             database=database,
         )
 
+    @app.exception_handler(ModelUnavailable)
+    @app.exception_handler(InsightUnavailable)
+    async def unavailable(_request: Request, exc: Exception):
+        return JSONResponse(status_code=503, content={"detail": str(exc)})
+
+    @app.exception_handler(OSError)
+    @app.exception_handler(SQLAlchemyError)
+    async def database_error(_request: Request, _exc: Exception):
+        return JSONResponse(
+            status_code=503,
+            content={
+                "detail": "Required local database or artifact "
+                "is unavailable. Run 'fulfilliq ingest', 'train' and 'build-insights'."
+            },
+        )
+
+    @app.exception_handler(ValueError)
+    async def invalid_input(_request: Request, exc: ValueError):
+        return JSONResponse(status_code=422, content={"detail": str(exc)})
+
+    app.include_router(intelligence_router(settings))
     return app
 
 

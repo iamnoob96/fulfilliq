@@ -1,13 +1,11 @@
 import json
 
-import numpy as np
 import pandas as pd
 import pytest
 from pydantic import ValidationError
 
 from fulfilliq.features.orders import (
     FEATURES,
-    NUMERIC_FEATURES,
     OutcomeHistory,
     build_dataset,
 )
@@ -17,29 +15,6 @@ from fulfilliq.modeling.evaluation import choose_threshold, evaluate
 from fulfilliq.modeling.inference import ModelUnavailable, RiskService, request_features
 from fulfilliq.modeling.temporal import calibration_partition, chronological_split
 from fulfilliq.modeling.training import train_delivery_model
-
-
-@pytest.fixture
-def training_frame():
-    rng = np.random.default_rng(42)
-    n = 400
-    frame = pd.DataFrame({name: rng.uniform(1, 10, n) for name in NUMERIC_FEATURES})
-    frame["customer_state"] = np.where(np.arange(n) % 2, "SP", "RJ")
-    frame["primary_seller_state"] = "SP"
-    frame["primary_category"] = "books"
-    frame["seller_history_late_rate"] = rng.uniform(0, 1, n)
-    frame["region_history_late_rate"] = rng.uniform(0, 1, n)
-    frame.index = pd.Index([f"t{i}" for i in range(n)], name="order_id")
-    frame["purchased_at"] = pd.date_range("2017-01-01", periods=n, freq="D")
-    frame["estimated_at"] = frame.purchased_at + pd.Timedelta(days=4)
-    labels = (rng.random(n) < np.where(frame.customer_state.eq("RJ"), 0.6, 0.15)).astype(int)
-    frame["delivered_at"] = frame.purchased_at + pd.to_timedelta(2 + labels * 4, unit="D")
-    frame["label_available_at"] = frame.delivered_at + pd.Timedelta(days=1)
-    frame["approved_at"] = frame.purchased_at + pd.Timedelta(hours=2)
-    frame["carrier_at"] = frame.purchased_at + pd.Timedelta(days=1)
-    frame["order_status"] = "delivered"
-    frame["target_is_late"] = labels
-    return frame
 
 
 def example_order(**changes):

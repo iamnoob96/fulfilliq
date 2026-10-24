@@ -118,3 +118,4 @@ class RiskResponse(BaseModel):
 
 class BatchResponse(BaseModel):
     predictions: list[RiskResponse]
+    priority_order_ids: list[str] = Field(default_factory=list)

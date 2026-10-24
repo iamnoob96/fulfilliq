@@ -13,7 +13,7 @@ def test_health_before_ingestion_does_not_create_database(tmp_path):
         assert response.json()["database"] == "missing"
         assert not settings.database_path.exists()
         schema = client.get("/openapi.json").json()
-        assert set(schema["paths"]) == {"/health"}
+        assert "/health" in schema["paths"]  # Additional versioned routes are now implemented.
         assert "503" in schema["paths"]["/health"]["get"]["responses"]
 
 

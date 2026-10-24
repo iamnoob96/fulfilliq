@@ -1,8 +1,10 @@
 """Load trusted local artifacts once per version; never fit during inference."""
 
+import importlib.metadata
 import json
 import re
 from pathlib import Path
+from threading import RLock
 
 import joblib
 import numpy as np
@@ -71,8 +73,13 @@ class RiskService:
         self.bundle = None
         self.metadata = None
         self.database_mtime = None
+        self._lock = RLock()
 
     def load(self) -> dict:
+        with self._lock:
+            return self._load()
+
+    def _load(self) -> dict:
         root = self.artifact_dir / "delivery"
         try:
             version = json.loads((root / "current.json").read_text())["version"]
@@ -81,6 +88,12 @@ class RiskService:
             if version != self.version:
                 folder = root / version
                 metadata = json.loads((folder / "metadata.json").read_text())
+                if metadata["versions"]["scikit-learn"] != importlib.metadata.version(
+                    "scikit-learn"
+                ):
+                    raise ValueError(
+                        "Model scikit-learn version differs; restore the lockfile or retrain"
+                    )
                 if (
                     metadata["feature_version"] != FEATURE_VERSION
                     or metadata["features"] != FEATURES
@@ -105,6 +118,10 @@ class RiskService:
             raise ModelUnavailable(f"Model unavailable: {exc}. Run 'fulfilliq train'.") from exc
 
     def predict(self, requests: list[OrderRequest]) -> list[RiskResponse]:
+        with self._lock:
+            return self._predict(requests)
+
+    def _predict(self, requests: list[OrderRequest]) -> list[RiskResponse]:
         metadata = self.load()
         frame = request_features(requests, self.bundle["history"])
         with threadpool_limits(limits=2):
