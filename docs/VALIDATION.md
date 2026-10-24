@@ -26,6 +26,9 @@ This section preserves the original ingestion baseline. Current end-to-end resul
   multi-seller and multi-item deduplication, training/API parity, v1/v2 artifact
   loading, checksum/schema compatibility, invalid probabilities, budget metrics,
   capacity validation and stable queue ties.
+  Controlled fixtures also exercise explicit qualified promotion and injected
+  candidate-load failure: the prior serving pointer is restored and the report
+  records `promoted: false`. The real-data active pointer was never changed.
 - A temporary real HTTP server using the existing Olist database passed all
   public routes, Swagger/OpenAPI, repeatable inference, single/batch parity, the
   new capacity queue and expected 422/404 failures. The server was stopped.

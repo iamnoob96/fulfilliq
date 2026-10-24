@@ -7,6 +7,7 @@ from test_end_to_end import complete_raw
 from fulfilliq.api.main import create_app
 from fulfilliq.config import Settings
 from fulfilliq.ingestion.pipeline import ingest
+from fulfilliq.modeling import experiment
 from fulfilliq.modeling.experiment import (
     promotion_checks,
     run_risk_experiment,
@@ -16,7 +17,7 @@ from fulfilliq.modeling.inference import ModelUnavailable, RiskService
 from fulfilliq.modeling.training import train_delivery_model
 
 
-def test_bounded_challenger_roundtrip_and_no_automatic_promotion(tmp_path):
+def test_bounded_challenger_roundtrip_and_promotion_guards(tmp_path, monkeypatch):
     settings = Settings(data_dir=tmp_path / "data", artifact_dir=tmp_path / "artifacts")
     settings.data_dir.mkdir()
     complete_raw(settings.raw_dir)
@@ -65,6 +66,43 @@ def test_bounded_challenger_roundtrip_and_no_automatic_promotion(tmp_path):
             "20",
         }
         assert client.get("/api/v1/models/info").status_code == 200
+    # Explicit promotion can activate only after gates pass, and failure rolls back
+    # both the serving pointer and the claimed promotion status in the report.
+    pointer.write_bytes(original)
+    monkeypatch.setattr(experiment, "promotion_checks", lambda *args: {"fixture_gate": True})
+    promoted = run_risk_experiment(
+        settings.database_path,
+        settings.artifact_dir,
+        tmp_path / "promoted.json",
+        quick=True,
+        promote_if_qualified=True,
+    )
+    assert promoted["promoted"]
+    assert json.loads(pointer.read_text())["version"] == promoted["challenger_model_version"]
+    pointer.write_bytes(original)
+    original_load = RiskService.load
+
+    def failed_candidate_load(service):
+        if json.loads(pointer.read_text())["version"] != baseline["model_version"]:
+            raise ModelUnavailable("Injected candidate load failure")
+        return original_load(service)
+
+    monkeypatch.setattr(RiskService, "load", failed_candidate_load)
+    failed_output = tmp_path / "failed-promotion.json"
+    with pytest.raises(ModelUnavailable, match="Injected candidate"):
+        run_risk_experiment(
+            settings.database_path,
+            settings.artifact_dir,
+            failed_output,
+            quick=True,
+            promote_if_qualified=True,
+        )
+    assert pointer.read_bytes() == original
+    failed = json.loads(failed_output.read_text())
+    assert failed["qualified"] and not failed["promoted"]
+    assert "Injected candidate" in failed["promotion_error"]
+    monkeypatch.setattr(RiskService, "load", original_load)
+    pointer.write_text(json.dumps({"version": version}))
     metadata_path = settings.artifact_dir / "delivery" / version / "metadata.json"
     metadata = json.loads(metadata_path.read_text())
     metadata["feature_version"] = 1

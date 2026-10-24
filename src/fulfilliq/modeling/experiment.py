@@ -335,19 +335,24 @@ def run_risk_experiment(
         "feature_importance": metadata["feature_importance"],
         "promotion_checks": checks,
         "qualified": qualified,
-        "promoted": bool(promote_if_qualified and qualified),
+        "promoted": False,
         "duration_seconds": perf_counter() - start,
     }
     write_json(output, report)
-    if report["promoted"]:
+    if promote_if_qualified and qualified:
         current = json.loads((root / "current.json").read_text())["version"]
         if current != baseline_metadata["model_version"]:
             raise ValueError("Active version changed during experiment; refusing promotion")
-        # Validate saved bundle and schema before atomically changing the serving pointer.
+        # Activate atomically, verify serving load, and restore the previous pointer on failure.
         write_json(root / "current.json", {"version": version})
         try:
             RiskService(artifact_dir, database_path).load()
-        except Exception:
+            report["promoted"] = True
+            write_json(output, report)
+        except Exception as exc:
             write_json(root / "current.json", {"version": current})
+            report["promoted"] = False
+            report["promotion_error"] = str(exc)
+            write_json(output, report)
             raise
     return report
