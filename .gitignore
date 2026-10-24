@@ -46,3 +46,5 @@ artifacts/*
 /fulfilliq-operations.md
 .Rhistory
 .RData
+
+/cohort-ranking.csv

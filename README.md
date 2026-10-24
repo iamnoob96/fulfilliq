@@ -24,7 +24,10 @@ capacity-limited review queues, persistent investigation notes/status, logistics
 seller peers, mining, Portuguese review evidence, saved model results and report exports.
 Discovery includes status/outcome filters and investigation counts. Region/seller drill-downs
 connect findings to orders; saved page scores, review capacity and selection survive navigation.
-Stale edits retain their draft and require an explicit reload. Ranking remains page-local.
+Stale edits retain their draft and require an explicit reload. Quick scoring remains page-local;
+persistent cohort jobs rank all successfully scored orders after every candidate is processed.
+The launcher also starts the resumable local worker. Cohorts are bounded to 2,000 orders
+by default; jobs/progress/results persist separately from the warehouse and review notes.
 Human decisions are stored in a separate SQLite database; historical orders remain
 read-only. Both services bind to loopback and review writes require a shared local token.
 
@@ -272,6 +275,8 @@ replay was exercised, Python/R rule metrics matched, and separate workflow persi
 survived API recreation. The saved delivery model was not refitted or promoted by this assignment.
 The later workflow-reliability sprint passes **143 tests**, including stale draft conflicts,
 cache validity, navigation, discovery filters and CSV consistency.
+The persistent-cohort checkpoint passes **153 tests** and verifies a 413-order real-data
+worker stop/restart: 411 scored, 2 unavailable, with matching full ranked CSV output.
 Run `uv run --extra dev --extra console pytest -q`; opt-in real-data and console checks
 are documented in [the operations guide](docs/OPERATIONS_CONSOLE.md).
 

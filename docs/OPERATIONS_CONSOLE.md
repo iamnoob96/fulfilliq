@@ -181,3 +181,75 @@ RJ late-delivery cohort to an independent read-only warehouse query and exercise
 model replay plus review persistence using a temporary workflow database. This avoids
 adding demonstration notes to the shared operational database. No ML optimization,
 retraining, recalibration or promotion is performed.
+
+## Persistent cohort scoring
+
+The launcher now starts a **third process**, the SQLite-backed scoring worker. Quick
+**Score candidate page** remains page-local. The separate **Cohort Scoring — persistent
+jobs** section freezes every matching candidate ID and filter, across all candidate pages.
+
+1. Narrow discovery filters to at most **2,000 candidates** (default), then create a
+   persistent job. Status/outcome-based selections are explicitly retrospective.
+2. Refresh progress; navigate away or restart without losing it. Saved jobs are listed
+   independently of current dashboard filters. Pending work needs the local worker.
+3. Only completed jobs with a terminal scored/unavailable outcome for **every** candidate
+   show a complete cohort-wide ranking. Others show preliminary results. All-unavailable
+   cohorts finish with an empty scored queue and explicit unavailable reasons.
+4. Choose Top N or a percentage of successfully scored orders, filter current investigation
+   state, inspect a cohort order, and use the existing revision-checked review form. Changing
+   capacity/status does not rescore. Results retain their original model/snapshot provenance.
+5. **Export full filtered cohort CSV** exports all matching recorded results, independently
+   of the visible 50-row result page. Existing larger jobs remain fully exportable if the
+   configured creation limit is later reduced. The response includes `X-Ranking-Complete`.
+
+Run a worker separately (same data/artifact/operational settings as the API):
+
+```sh
+uv run python -m fulfilliq.operations.worker
+# One bounded iteration, useful for a controlled stop/resume demonstration:
+uv run python -m fulfilliq.operations.worker --batch-size 50 --max-batches 1
+# Real-data process restart demo, isolated jobs/notes, no shared history changes:
+uv run --extra dev python scripts/verify_cohort_scoring.py
+```
+
+Defaults: 50 orders per chunk (configurable 1–100), 180-second lease (10–3,600), and
+2,000 candidates/job. `FULFILIQ_SCORING_MAX_ORDERS` permits a local creation bound of
+1–5,000; no unbounded job is accepted. `FULFILIQ_OPERATIONS_DIR` optionally relocates
+both operational databases; default remains `data/processed/`. Worker memory is bounded
+by the existing model plus a chunk; the API retains its existing warehouse cache.
+
+The worker claims one job with `BEGIN IMMEDIATE` and a unique lease token. It reconstructs
+strict checkout requests using the **same replay function** as the quick-scoring API,
+then atomically commits a chunk and progress. No transaction is held during inference.
+An expired/replaced claim cannot commit; unique job/order and job/sequence constraints
+prevent duplicate results. Graceful signals finish the bounded current chunk and stop.
+After an abrupt stop, the next worker automatically reclaims expired running work; at
+most an uncommitted chunk is repeated. Cancel revokes the claim, preventing an in-flight
+commit. Explicit resume supports canceled/failed jobs after the recorded snapshot is
+restored. Changed snapshots become stale; create a new job rather than mixing versions.
+Completed results remain historical snapshots. Failed chunks never appear completed.
+
+Schema migration v1 lives in the separate `scoring.sqlite3`, leaving the existing review
+schema/data untouched. `scoring_jobs` stores ID, immutable filter JSON, timestamps, state,
+counts, model version, warehouse identifier, default capacity, sanitized error, and private
+lease fields. `scoring_results` freezes IDs/sequences and stores pending/scored/unavailable
+state, probability, original validated prediction JSON, reason, and processing timestamp.
+Review statuses/notes remain in `operations.sqlite3`, and current status is joined for
+queue display/export. Back up **both** operational databases. Neither is committed.
+
+API: token-protected `POST /api/v1/scoring-jobs`, `POST /{id}/cancel`, `POST /{id}/resume`;
+read-only `GET /api/v1/scoring-jobs`, `GET /{id}`, `GET /{id}/results`, and
+`GET /{id}/export.csv`. Paths after the first share the `/api/v1/scoring-jobs` prefix.
+Results accept capacity, review status, include-unavailable and bounded limit/offset.
+OpenAPI documents the typed job/result contracts. Unknown IDs return 404, conflicts 409,
+oversized/invalid cohorts 422, and unavailable saved models 503. No route trains a model
+or executes the complete cohort synchronously. Keep services on localhost.
+
+Observed real-data verification (24 October 2026): AL cohort **413 candidates**, first
+worker stopped after **50**, fresh worker completed **411 scored + 2 unavailable**; CSV
+contained **411** ranked rows. Isolated investigation persistence, ordering, duplicate
+prevention and warehouse/active-model checksums passed. Runtime **18.65 s**, observed
+worker-child peak RSS about **207 MiB** on this Mac; this excludes API/console memory.
+The default 2,000-order bound is conservative, not a claim that 2,000 was load-tested.
+No ML tuning/training/calibration/promotion occurred. Remaining limits are local-process
+execution, manual progress refresh, lease-expiry recovery delay and no job-retention UI.

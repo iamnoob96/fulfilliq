@@ -46,7 +46,7 @@ def main():
         subprocess.run(command + ["1"], env=env, check=True)
         partial = JobStore(settings).get(identifier)
         assert partial["processed_count"] == 50 and not partial["ranking_complete"]
-        # The first worker process has exited. Fresh API and worker processes resume persisted work.
+        # The first worker process has exited. A fresh API instance and new worker process resume persisted work.
         api = TestClient(create_app(settings))
         assert api.get(f"/api/v1/scoring-jobs/{identifier}").json()["processed_count"] == 50
         subprocess.run(command + ["100"], env=env, check=True)
