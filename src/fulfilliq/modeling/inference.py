@@ -11,7 +11,8 @@ import numpy as np
 import pandas as pd
 from threadpoolctl import threadpool_limits
 
-from fulfilliq.features.orders import FEATURE_VERSION, FEATURES, haversine_km, placement_features
+from fulfilliq.features.orders import haversine_km, placement_features
+from fulfilliq.features.risk_v2 import FEATURE_SCHEMAS, placement_v2
 from fulfilliq.ingestion.validation import sha256_file
 from fulfilliq.modeling.contracts import OrderRequest, RiskResponse
 from fulfilliq.modeling.training import dataset_identity
@@ -62,8 +63,10 @@ def request_features(requests: list[OrderRequest], history) -> pd.DataFrame:
     item_frame = pd.DataFrame(items)
     for name in ("price", "freight_value", "product_weight_g", "product_volume_cm3", "distance_km"):
         item_frame[name] = pd.to_numeric(item_frame[name], errors="coerce")
-    frame = placement_features(pd.DataFrame(orders), item_frame)
-    return history.enrich(frame, memberships)[FEATURES]
+    version = getattr(history, "feature_version", 1)
+    placement = placement_v2 if version == 2 else placement_features
+    frame = placement(pd.DataFrame(orders), item_frame)
+    return history.enrich(frame, memberships)[FEATURE_SCHEMAS[version]]
 
 
 class RiskService:
@@ -95,14 +98,16 @@ class RiskService:
                         "Model scikit-learn version differs; restore the lockfile or retrain"
                     )
                 if (
-                    metadata["feature_version"] != FEATURE_VERSION
-                    or metadata["features"] != FEATURES
+                    metadata["feature_version"] not in FEATURE_SCHEMAS
+                    or metadata["features"] != FEATURE_SCHEMAS[metadata["feature_version"]]
                 ):
                     raise ValueError("Model feature schema is incompatible; retrain")
                 if sha256_file(folder / "model.joblib") != metadata["model_sha256"]:
                     raise ValueError("Model artifact checksum mismatch; retrain")
                 # joblib is trusted code: only this application's locally trained files are accepted.
                 bundle = joblib.load(folder / "model.joblib")
+                if getattr(bundle["history"], "feature_version", 1) != metadata["feature_version"]:
+                    raise ValueError("Model history feature version differs from metadata")
                 self.version, self.metadata, self.bundle = version, metadata, bundle
                 self.database_mtime = None
             mtime = self.database_path.stat().st_mtime_ns

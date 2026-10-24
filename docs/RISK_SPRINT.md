@@ -50,3 +50,28 @@ milestones remain excluded.
 Continuous historical queries can use earlier test deliveries only after their
 reporting lag has elapsed before a later order: this simulates online updating,
 not estimator fitting on test labels. Model parameters stay frozen.
+
+## Feature schema 2
+
+Retain schema 1 and add freight / merchandise value (unknown for zero/missing
+value), item-weighted interstate fraction, primary seller-state/customer-state
+route, observed seller and route mean purchase-to-delivery days, promise minus
+those observed means, route observation count, and smoothed seller/route delay
+rates. Primary state retains the existing lexicographic convention; the history
+queries use **all** distinct sellers and routes, not only the primary one.
+
+History is indexed by actual delivery plus one day, queried strictly before
+purchase over the trailing 180 days. Seller observations are distinct
+seller/order pairs; routes are distinct seller-state/customer-state/order pairs.
+For a multi-seller order, pool the available seller observations; shared historic
+orders can contribute once for each distinct seller. A route contributes once
+per state pair, even with multiple sellers in that state. No item duplication.
+Smoothed rate = (late count + 20 * past global late rate) / (count + 20). The
+global prior uses the same availability/window restrictions and counts each
+order once. Cold sellers use that prior; without any available global history
+the rate is unknown. Unknown durations remain missing. Delivery duration uses
+only delivered, nonnegative-duration outcomes; unavailable deliveries never enter
+the aggregates. This is contextual evidence rather than causal attribution.
+
+Shared placement and history code generates both training and API features.
+Schema 1 artifacts remain loadable; schema 2 requires matching history metadata.
