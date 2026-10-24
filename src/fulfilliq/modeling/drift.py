@@ -129,7 +129,9 @@ def feature_drift(train: pd.DataFrame, evaluation: pd.DataFrame, items: pd.DataF
     }
 
 
-def summarize_policies(folds: list[dict], failed_folds: int = 0) -> dict:
+def summarize_policies(
+    folds: list[dict], failed_folds: int = 0, *, candidate_names=("raw", "sigmoid", "isotonic")
+) -> dict:
     policies = sorted({name for fold in folds for name in fold["policies"]})
     summaries = {}
     for name in policies:
@@ -169,7 +171,7 @@ def summarize_policies(folds: list[dict], failed_folds: int = 0) -> dict:
             },
         }
     eligible = []
-    for name in ("raw", "sigmoid", "isotonic"):
+    for name in candidate_names:
         if name not in summaries:
             continue
         row = summaries[name]
