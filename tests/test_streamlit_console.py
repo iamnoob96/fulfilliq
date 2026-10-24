@@ -17,13 +17,16 @@ pytest.importorskip("streamlit", reason="Install the console extra to run UI tes
 def console_backend(raw_dir, tmp_path, monkeypatch):
     settings = Settings(data_dir=tmp_path, artifact_dir=tmp_path / "artifacts", write_token="local")
     ingest(raw_dir, settings.database_path, settings.processed_dir)
+    (settings.artifact_dir / "delivery").mkdir(parents=True)
+    (settings.artifact_dir / "delivery/current.json").write_text('{"version":"saved-fixture"}')
     api = TestClient(create_app(settings))
+    api.application_settings = settings
 
     def request(_self, method, path, *, params=None, body=None):
         response = api.request(method, path, params=params, json=body,
                                headers={"Authorization": "Bearer local"})
         if response.is_error:
-            raise BackendError(str(response.json()))
+            raise BackendError(str(response.json()), status_code=response.status_code)
         return response.json()
 
     monkeypatch.setattr(BackendClient, "request", request)
@@ -58,3 +61,100 @@ def test_console_handles_missing_dependency_and_backend(monkeypatch):
     app = AppTest.from_file(Path(__file__).resolve().parents[1] / "src/fulfilliq/console/app.py").run(timeout=30)
     assert not app.exception
     assert "unavailable" in app.error[0].value
+
+
+def test_stale_review_draft_is_not_silently_overwritten(console_backend):
+    from streamlit.testing.v1 import AppTest
+
+    app = AppTest.from_file(Path(__file__).resolve().parents[1] / "src/fulfilliq/console/app.py").run(timeout=30)
+    app.sidebar.radio[0].set_value("Orders & review queue").run(timeout=30)
+    console_backend.put("/api/v1/orders/o6/review", json={"status": "investigating", "notes": "Other session",
+                        "expected_revision": 0}, headers={"Authorization": "Bearer local"})
+    next(box for box in app.text_area if box.label.startswith("Investigation notes")).set_value("My unsaved draft")
+    next(button for button in app.button if button.label == "Save review").click().run(timeout=30)
+    assert not app.exception
+    assert "Another session" in app.error[0].value
+    assert console_backend.get("/api/v1/orders/o6").json()["review"]["notes"] == "Other session"
+    assert next(box for box in app.text_area if box.label.startswith("Investigation notes")).value == "My unsaved draft"
+    next(button for button in app.button if button.label.startswith("Reload saved review")).click().run(timeout=30)
+    assert next(box for box in app.text_area if box.label.startswith("Investigation notes")).value == "Other session"
+    next(box for box in app.text_area if box.label.startswith("Investigation notes")).set_value("Merged after reload")
+    next(button for button in app.button if button.label == "Save review").click().run(timeout=30)
+    assert not app.exception and not app.error
+    assert console_backend.get("/api/v1/orders/o6").json()["review"]["revision"] == 2
+    app.sidebar.radio[0].set_value("Overview").run(timeout=30)
+    app.sidebar.radio[0].set_value("Orders & review queue").run(timeout=30)
+    assert next(box for box in app.text_area if box.label.startswith("Investigation notes")).value == "Merged after reload"
+
+
+def test_scored_page_cache_navigation_capacity_and_filtered_export(console_backend, monkeypatch):
+    import io
+
+    import pandas as pd
+    from streamlit.testing.v1 import AppTest
+
+    from fulfilliq.console.client import csv_export
+    from fulfilliq.modeling.contracts import RiskResponse
+
+    calls, exports = [], []
+
+    def predict(_self, orders):
+        calls.append(len(orders))
+        return [RiskResponse(order_id=o.order_id, delay_probability=.8 if o.order_id == "o1" else .2,
+            threshold=.15, risk_category="high", model_version="saved-fixture", recommendation="Review",
+            rationale=[], warnings=["Synthetic fixture"]) for o in orders]
+
+    def export(frame):
+        exports.append(frame.copy())
+        return csv_export(frame)
+
+    monkeypatch.setattr("fulfilliq.modeling.inference.RiskService.predict", predict)
+    monkeypatch.setattr("fulfilliq.console.client.csv_export", export)
+    app = AppTest.from_file(Path(__file__).resolve().parents[1] / "src/fulfilliq/console/app.py").run(timeout=30)
+    app.sidebar.radio[0].set_value("Orders & review queue").run(timeout=30)
+    next(button for button in app.button if button.label == "Score candidate page").click().run(timeout=30)
+    assert not app.exception and not app.error
+    assert len(calls) == 1
+    next(button for button in app.button if button.label == "Inspect highest-risk match").click().run(timeout=30)
+    assert next(box for box in app.selectbox if box.label == "Inspect candidate order").value == "o1"
+    app.slider[0].set_value(1).run(timeout=30)
+    next(button for button in app.button if button.label == "Score candidate page").click().run(timeout=30)
+    assert len(calls) == 1
+    app.sidebar.radio[0].set_value("Overview").run(timeout=30)
+    app.sidebar.radio[0].set_value("Orders & review queue").run(timeout=30)
+    assert app.slider[0].value == 1
+    assert next(box for box in app.selectbox if box.label == "Inspect candidate order").value == "o1"
+    assert len(calls) == 1
+    console_backend.put("/api/v1/orders/o1/review", json={"status": "reviewed", "notes": "Synthetic", "expected_revision": 0},
+                        headers={"Authorization": "Bearer local"})
+    next(box for box in app.selectbox if box.label == "Scored queue workflow filter").set_value("reviewed").run(timeout=30)
+    assert not app.exception and not app.error
+    exported = next(frame for frame in reversed(exports) if "delay_probability" in frame)
+    assert exported.order_id.tolist() == ["o1"] and exported.review_status.tolist() == ["reviewed"]
+    assert pd.read_csv(io.BytesIO(csv_export(exported))).order_id.tolist() == ["o1"]
+    assert len(calls) == 1
+    next(button for button in app.button if button.label == "Open seller evidence").click().run(timeout=30)
+    assert app.sidebar.radio[0].value == "Seller intelligence"
+    next(button for button in app.button if button.label == "Find this seller’s orders").click().run(timeout=30)
+    assert app.sidebar.radio[0].value == "Orders & review queue"
+    assert app.sidebar.selectbox[1].value == "s1"
+    app.sidebar.selectbox[1].set_value("All").run(timeout=30)
+    assert any(header.value == "Risk-ranked review queue" for header in app.subheader)
+    # A changed model manifest cannot reuse scores from the previous version.
+    (console_backend.application_settings.artifact_dir / "delivery/current.json").write_text(
+        '{"version":"changed-fixture"}')
+    app.run(timeout=30)
+    assert not any(header.value == "Risk-ranked review queue" for header in app.subheader)
+
+
+def test_csv_formula_text_is_escaped_without_changing_numeric_values():
+    import io
+
+    import pandas as pd
+
+    from fulfilliq.console.client import csv_export
+
+    result = pd.read_csv(io.BytesIO(csv_export(pd.DataFrame({
+        "note": ["=SUM(A1:A2)", "+command", "normal"], "amount": [-5, 0, 12]}))))
+    assert result.note.tolist() == ["'=SUM(A1:A2)", "'+command", "normal"]
+    assert result.amount.tolist() == [-5, 0, 12]

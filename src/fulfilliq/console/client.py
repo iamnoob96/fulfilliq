@@ -3,10 +3,20 @@
 import os
 
 import httpx
+import pandas as pd
+
+
+def csv_export(frame: pd.DataFrame) -> bytes:
+    """Export displayed rows and escape spreadsheet formula-like text cells."""
+    safe = frame.map(lambda value: "'" + value if isinstance(value, str)
+                     and value.startswith(("=", "+", "-", "@", "\t", "\r")) else value)
+    return safe.to_csv(index=False).encode("utf-8")
 
 
 class BackendError(RuntimeError):
-    pass
+    def __init__(self, message: str, *, status_code: int | None = None):
+        super().__init__(message)
+        self.status_code = status_code
 
 
 class BackendClient:
@@ -24,7 +34,8 @@ class BackendClient:
                     detail = response.json().get("detail", response.text[:300])
                 except ValueError:
                     detail = response.text[:300]
-                raise BackendError(f"Backend returned {response.status_code}: {detail}")
+                raise BackendError(f"Backend returned {response.status_code}: {detail}",
+                                   status_code=response.status_code)
             return response.json()
         except httpx.RequestError as exc:
             raise BackendError("Backend unreachable. Start both services with scripts/start_app.sh.") from exc

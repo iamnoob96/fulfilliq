@@ -79,6 +79,9 @@ def test_replay_uses_existing_inference_contract_and_excludes_outcomes(applicati
     body = response.json()
     assert body["review_order_ids"] == ["o1"]
     assert len(body["predictions"]) == 2 and len(body["unavailable"]) == 2
+    assert body["candidate_count"] == 4 and body["scored_count"] == 2
+    assert body["model_version"] == "saved-fixture" and body["scored_at_utc"].endswith("+00:00")
+    assert body["warehouse_snapshot"]
     assert captured[0].items[0].price == 100
     assert not hasattr(captured[0], "delivered_at")
     orders = OrderService(settings.database_path, ReviewStore(settings.review_database_path))

@@ -32,6 +32,12 @@ def main():
             identifier = conn.scalar(text("""SELECT order_id FROM orders
                 WHERE order_status='delivered' AND order_purchase_timestamp > '2018-07-01'
                 ORDER BY order_purchase_timestamp, order_id LIMIT 1"""))
+            regional_late = conn.scalar(text("""SELECT COUNT(*) FROM orders o
+                JOIN customers c ON c.customer_id=o.customer_id WHERE c.customer_state='RJ'
+                AND o.order_status='delivered'
+                AND o.order_delivered_customer_date>=o.order_purchase_timestamp
+                AND o.order_estimated_delivery_date>=o.order_purchase_timestamp
+                AND o.order_delivered_customer_date>o.order_estimated_delivery_date"""))
     finally:
         engine.dispose()
     with tempfile.TemporaryDirectory(prefix="fulfilliq-review-smoke-") as temporary:
@@ -48,12 +54,18 @@ def main():
         api = TestClient(create_app(isolated))
         overview = api.get("/api/v1/analytics/overview").json()
         assert overview["total_orders"] == total == 99441
+        discovery = api.get("/api/v1/orders", params={"region": "RJ", "order_status": "delivered",
+                            "delivery_outcome": "late", "limit": 3}).json()
+        assert discovery["total"] == discovery["cohort_total"] == regional_late
+        assert all(row["delivery_outcome"] == "late" for row in discovery["items"])
         detail = api.get("/api/v1/orders/" + identifier).json()
         assert detail["replay_payload"] is not None
         direct = api.post("/api/v1/orders/predict-delay", json=detail["replay_payload"])
         replay = api.post("/api/v1/orders/replay", json={"order_ids": [identifier], "review_capacity": 1})
         assert direct.status_code == replay.status_code == 200
         assert direct.json() == replay.json()["predictions"][0]
+        assert replay.json()["scored_count"] == replay.json()["candidate_count"] == 1
+        assert replay.json()["scored_at_utc"] and replay.json()["warehouse_snapshot"]
         assert 0 <= direct.json()["delay_probability"] <= 1
         assert direct.json()["model_version"] == version
         response = api.put(f"/api/v1/orders/{identifier}/review", json={
@@ -62,6 +74,7 @@ def main():
         assert response.status_code == 200
         restarted = TestClient(create_app(isolated))
         assert restarted.get("/api/v1/orders/" + identifier).json()["review"]["revision"] == 1
+        assert restarted.get("/api/v1/orders", params={"order_ids": [identifier]}).json()["review_counts"]["investigating"] == 1
         seller = detail["products"][0]["seller_id"]
         checks = [f"/sellers/{seller}/insights", "/sellers/segments", "/mining/association-rules",
                   "/mining/itemsets", "/mining/anomalies", "/reviews/insights", "/reviews/evidence",
@@ -81,7 +94,8 @@ def main():
                     assert response.content.startswith(b"\x89PNG\r\n\x1a\n")
     after = {"warehouse": digest(settings.database_path), "pointer": digest(pointer), "model": digest(model)}
     assert before == after
-    return {"total_orders": total, "eligible_outcomes": overview["eligible_outcomes"],
+    return {"total_orders": total, "filtered_regional_late_orders": regional_late,
+            "eligible_outcomes": overview["eligible_outcomes"],
             "late_orders": overview["late_orders"], "active_sellers": overview["active_sellers"],
             "model_version": version, "warehouse_and_model_unchanged": before == after,
             "single_and_replay_predictions_identical": True, "review_restart_persistence": True,

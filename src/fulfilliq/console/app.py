@@ -7,7 +7,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from fulfilliq.console.client import BackendClient, BackendError
+from fulfilliq.console.client import BackendClient, BackendError, csv_export
 
 st.set_page_config(page_title="FulfillIQ · Operations", page_icon="📦", layout="wide")
 client = BackendClient()
@@ -23,7 +23,7 @@ def table(rows, name="table", *, export=False):
         return frame
     st.dataframe(frame, hide_index=True, width="stretch")
     if export:
-        st.download_button("Download CSV", frame.to_csv(index=False).encode(),
+        st.download_button("Download CSV", csv_export(frame),
                            file_name=name + ".csv", mime="text/csv", key="download_" + name)
     return frame
 
@@ -66,11 +66,39 @@ def show_overview(params):
         chart(regions, "group", "late_rate", "Late rate by customer state")
         st.metric("Active sellers in cohort", summary["active_sellers"])
         chart(regions, "group", "total_orders", "Order volume by customer state")
+    workload = client.get("/orders", **params, limit=1)
+    st.subheader("Human investigation workload · selected cohort")
+    st.write(workload["review_counts"])
+    st.caption("Workflow decisions are separate from observed delivery outcomes and model risk.")
+    states = [row["group"] for row in regions]
+    if states:
+        region = st.selectbox("Investigate customer state", states)
+        st.button("Find orders in this region", on_click=navigate_orders,
+                  kwargs={"filter_region": region})
     with st.expander("Definitions and denominators"):
         st.json(summary)
 
 
-def order_details(identifier):
+def remembered_select(label, options, key, *, index=0):
+    """Keep logical choices when Streamlit removes widgets on another page."""
+    value = st.session_state.get(key, options[index])
+    st.session_state["widget_" + key] = value if value in options else options[index]
+
+    def remember():
+        st.session_state[key] = st.session_state["widget_" + key]
+
+    selected = st.selectbox(label, options, key="widget_" + key, on_change=remember)
+    st.session_state[key] = selected
+    return selected
+
+
+def navigate_orders(**filters):
+    st.session_state.update(filters)
+    st.session_state["navigation"] = "Orders & review queue"
+    st.session_state["browse_page"] = 1
+
+
+def order_details(identifier, prediction=None):
     detail = client.get("/orders/" + identifier)
     st.subheader("Order " + identifier)
     st.caption(detail["interpretation"])
@@ -79,65 +107,161 @@ def order_details(identifier):
     table(detail["products"], "products")
     with st.expander("Subsequent historical outcomes · excluded from replay inputs"):
         st.json(detail["observed_after_purchase"])
+    context = st.session_state.get("model_context")
+    score_key = json.dumps([identifier, context])
+    individual = st.session_state.setdefault("individual_scores", {})
+    prediction = prediction or individual.get(score_key)
     if detail["replay_payload"]:
         if st.button("Score this historical order", key="score_detail_" + identifier):
             result = client.post("/orders/replay", {"order_ids": [identifier], "review_capacity": 1})
-            st.json(result)
+            prediction = result["predictions"][0]
+            individual[score_key] = prediction
     else:
         st.warning(detail["replay_unavailable_reason"])
+    if prediction:
+        st.metric("Model-estimated delay probability", f"{prediction['delay_probability']:.1%}")
+        st.caption(f"Model {prediction['model_version']} · threshold {prediction['threshold']:.3f} · "
+                   f"category {prediction['risk_category']}. A risk estimate is not a confirmed outcome.")
+        st.write(prediction["rationale"])
+        for warning in prediction["warnings"]:
+            st.warning(warning)
+    with st.expander("Related seller and logistics evidence"):
+        seller_ids = sorted({row["seller_id"] for row in detail["products"]})
+        seller = st.selectbox("Related seller", seller_ids, key="related_" + identifier) if seller_ids else None
+        if seller and st.button("Open seller evidence", key="seller_evidence_" + identifier):
+            st.session_state["seller_focus"] = seller
+            st.session_state["next_navigation"] = "Seller intelligence"
+            st.rerun()
+        st.caption("Seller insights and anomaly screens summarize historical associations; they are not "
+                   "prediction-time inputs or proof of a delivery incident.")
     state = detail["review"]
+    drafts = st.session_state.setdefault("review_drafts", {})
+    if st.button("Reload saved review (discard draft)", key="reload_" + identifier):
+        drafts[identifier] = dict(state)
+        for key in ("notes_" + identifier, "status_" + identifier):
+            st.session_state.pop(key, None)
+    draft = drafts.setdefault(identifier, dict(state))
     st.markdown("**Human review decision**")
     with st.form("review_" + identifier):
-        status = st.selectbox("Investigation status", STATUSES, index=STATUSES.index(state["status"]))
+        status = st.selectbox("Investigation status", STATUSES, index=STATUSES.index(draft["status"]),
+                              key="status_" + identifier)
         notes = st.text_area("Investigation notes · avoid personal or sensitive information",
-                             state["notes"], max_chars=5000)
-        st.caption(f"Saved revision {state['revision']} · updated {state['updated_at_utc'] or 'never'}")
+                             draft["notes"], max_chars=5000, key="notes_" + identifier)
+        st.caption(f"Editing revision {draft['revision']} · latest saved revision {state['revision']}")
         if st.form_submit_button("Save review"):
-            saved = client.put(f"/orders/{identifier}/review", {
-                "status": status, "notes": notes, "expected_revision": state["revision"]})
-            st.success(f"Review saved · revision {saved['revision']}. Reload to see refreshed queue filters.")
+            draft.update(status=status, notes=notes)
+            try:
+                saved = client.put(f"/orders/{identifier}/review", {
+                    "status": status, "notes": notes, "expected_revision": draft["revision"]})
+            except BackendError as exc:
+                if exc.status_code != 409:
+                    raise
+                st.error("Another session changed this review. Your draft is retained. "
+                         "Copy it if needed, then reload the saved review before editing again.")
+            else:
+                drafts.pop(identifier, None)
+                st.session_state["review_flash"] = f"Review saved · revision {saved['revision']}."
+                st.rerun()
 
 
-def show_orders(params):
-    st.info("Historical replay uses the existing saved model. Candidate selection is chronological; "
-            "ranking covers only the submitted page of at most 100 orders. Scores are uncertain, "
-            "and this replay is not independent model validation.")
+def show_orders(params, options):
+    st.info("Historical replay ranks only this candidate page (at most 100 orders), not the complete "
+            "filtered cohort. Observed status/outcome filters are retrospective browsing context; "
+            "they never enter checkout features. This is not independent model validation.")
+    if message := st.session_state.pop("review_flash", None):
+        st.success(message)
     cols = st.columns(3)
-    status = cols[0].selectbox("Workflow filter", ["all"] + STATUSES)
-    size = cols[1].selectbox("Candidates per page", [25, 50, 100], index=1)
-    page = int(cols[2].number_input("Page", min_value=1, value=1))
-    cohort = {**params, "review_status": None if status == "all" else status,
-              "limit": size, "offset": (page-1)*size}
-    listing = client.get("/orders", **cohort)
-    st.caption(f"{listing['total']:,} matching orders · page {page}")
+    with cols[0]:
+        status = remembered_select("Workflow filter", ["all"] + STATUSES, "browse_status")
+    with cols[1]:
+        order_status = remembered_select("Historical order status", ["all"] + options["order_statuses"], "browse_order_status")
+    with cols[2]:
+        outcome = remembered_select("Observed delivery outcome", ["all", "late", "on_time", "unavailable"], "browse_outcome")
+    size = remembered_select("Candidates per page", [25, 50, 100], "browse_size", index=1)
+    filters = {**params, "review_status": None if status == "all" else status,
+               "order_status": None if order_status == "all" else order_status,
+               "delivery_outcome": None if outcome == "all" else outcome}
+    discovery_key = json.dumps([filters, size], sort_keys=True)
+    if st.session_state.get("discovery_key") != discovery_key:
+        st.session_state["browse_page"] = 1
+        st.session_state["discovery_key"] = discovery_key
+    page = st.session_state.get("browse_page", 1)
+    listing = client.get("/orders", **filters, limit=size, offset=(page-1)*size)
+    pages = max(1, (listing["total"] + size - 1)//size)
+    if page > pages:
+        st.session_state["browse_page"] = pages
+        st.rerun()
+    cols = st.columns(3)
+    if cols[0].button("Previous page", disabled=page <= 1):
+        st.session_state["browse_page"] = page - 1
+        st.rerun()
+    cols[1].caption(f"Page {page} of {pages} · {listing['total']:,} matching orders")
+    if cols[2].button("Next page", disabled=page >= pages):
+        st.session_state["browse_page"] = page + 1
+        st.rerun()
+    def jump_page():
+        st.session_state["browse_page"] = st.session_state["page_jump"]
+
+    st.session_state["page_jump"] = page
+    st.number_input("Go to page", min_value=1, max_value=pages, step=1,
+                    key="page_jump", on_change=jump_page)
+    st.caption("Investigation counts in the discovery cohort before the workflow-status filter:")
+    st.write(listing["review_counts"])
     table(listing["items"], "candidate_orders", export=True)
     identifiers = [row["order_id"] for row in listing["items"]]
-    if identifiers:
-        capacity = st.slider("Review capacity within this page", 0, len(identifiers), min(10, len(identifiers)))
+    if not identifiers:
+        st.info("No matching orders. Adjust discovery filters or return to a broader cohort.")
+    else:
+        def remember_capacity():
+            st.session_state["review_capacity"] = st.session_state["capacity_widget"]
+
+        capacity = st.slider("Review capacity within this page", 0, len(identifiers),
+                             min(st.session_state.get("review_capacity", 10), len(identifiers)),
+                             key="capacity_widget", on_change=remember_capacity)
+        context = st.session_state["model_context"]
+        cache_key = json.dumps([identifiers, context])
+        cache = st.session_state.setdefault("scored_pages", {})
         if st.button("Score candidate page", type="primary"):
-            with st.spinner("Scoring saved model through FastAPI…"):
-                st.session_state["queue"] = client.post("/orders/replay", {
-                    "order_ids": identifiers, "review_capacity": capacity})
-                st.session_state["queue_cohort"] = json.dumps(cohort, sort_keys=True)
-        queue = st.session_state.get("queue")
-        if queue and st.session_state.get("queue_cohort") == json.dumps(cohort, sort_keys=True):
+            if cache_key not in cache:
+                with st.spinner(f"Scoring {len(identifiers)} candidates with the saved model…"):
+                    scored = client.post("/orders/replay", {"order_ids": identifiers, "review_capacity": capacity})
+                    if scored["warehouse_snapshot"] != context[0] or (
+                        scored["model_version"] and scored["model_version"] != context[1]
+                    ):
+                        st.warning("Data/model changed during this request. Refresh before scoring again.")
+                        return
+                    cache[cache_key] = scored
+                    if len(cache) > 4:
+                        cache.pop(next(iter(cache)))
+            else:
+                st.success("Reused this page's saved scores; no repeat inference.")
+        queue = cache.get(cache_key)
+        ranked = []
+        if queue:
             st.subheader("Risk-ranked review queue")
-            st.caption(queue["interpretation"])
-            priorities = queue["review_order_ids"]
-            states = {row["order_id"]: row["review_status"] for row in listing["items"]}
+            st.caption(f"Scored {queue['scored_count']} of {queue['candidate_count']} candidates · "
+                       f"{queue['scored_at_utc']} · model {queue['model_version'] or 'unavailable'}. "
+                       "Scope: this candidate page only. Unreconstructible orders are excluded from ranking.")
+            states = client.get("/orders", order_ids=identifiers, limit=100)["items"]
+            state_by_id = {row["order_id"]: row["review_status"] for row in states}
             ranked = sorted(queue["predictions"], key=lambda row: -row["delay_probability"])
-            table([{**row, "within_review_capacity": row["order_id"] in priorities,
-                    "review_status": states[row["order_id"]]} for row in ranked], "review_queue", export=True)
+            review_ids = {row["order_id"] for row in ranked[:capacity]}
+            queue_status = remembered_select("Scored queue workflow filter", ["all"] + STATUSES, "queue_status")
+            rows = [{**row, "within_review_capacity": row["order_id"] in review_ids,
+                     "review_status": state_by_id.get(row["order_id"], "pending")} for row in ranked]
+            if queue_status != "all":
+                rows = [row for row in rows if row["review_status"] == queue_status]
+            table(rows, "review_queue", export=True)
+            if rows and st.button("Inspect highest-risk match"):
+                st.session_state["inspect_order"] = rows[0]["order_id"]
+                st.rerun()
             if queue["unavailable"]:
-                st.warning("Some orders cannot be reconstructed honestly.")
-                table(queue["unavailable"], "unavailable")
-        inspection_ids = identifiers
-        if queue and st.session_state.get("queue_cohort") == json.dumps(cohort, sort_keys=True):
-            ordered_ids = [row["order_id"] for row in sorted(
-                queue["predictions"], key=lambda row: -row["delay_probability"])]
-            inspection_ids = ordered_ids + [value for value in identifiers if value not in ordered_ids]
-        selected = st.selectbox("Inspect candidate order", inspection_ids)
-        order_details(selected)
+                table(queue["unavailable"], "unavailable", export=True)
+        inspection_ids = [row["order_id"] for row in ranked] + [value for value in identifiers
+                           if value not in {row["order_id"] for row in ranked}]
+        selected = remembered_select("Inspect candidate order", inspection_ids, "inspect_order")
+        predictions = {row["order_id"]: row for row in ranked}
+        order_details(selected, predictions.get(selected))
     with st.expander("Find a historical order by identifier"):
         identifier = st.text_input("Order identifier")
         if identifier and identifier.strip() not in ([selected] if identifiers else []):
@@ -167,7 +291,8 @@ def show_logistics(params):
 
 def show_seller(options):
     st.caption("Seller intelligence and peer segments summarize full history; overview date filters do not apply.")
-    identifier = st.selectbox("Seller", options["seller_ids"])
+    identifier = remembered_select("Seller", options["seller_ids"], "seller_focus")
+    st.button("Find this seller’s orders", on_click=navigate_orders, kwargs={"filter_seller": identifier})
     result = client.get(f"/sellers/{identifier}/insights")
     if result["performance"]:
         table([result["performance"]], "seller_performance")
@@ -316,25 +441,31 @@ def main():
     try:
         options = client.get("/console/options")
         st.sidebar.title("Operations")
-        page = st.sidebar.radio("Navigate", NAVIGATION)
+        if next_page := st.session_state.pop("next_navigation", None):
+            st.session_state["navigation"] = next_page
+        page = st.sidebar.radio("Navigate", NAVIGATION, key="navigation")
+        st.session_state["model_context"] = [options["warehouse_snapshot"], options["model_version"]]
         st.sidebar.caption(f"Olist history: {options['first_purchase']} → {options['last_purchase']}")
         st.sidebar.markdown("**Historical cohort filters**")
-        start = st.sidebar.date_input("Purchase from", date.fromisoformat(options["first_purchase"]))
-        end = st.sidebar.date_input("Purchase through", date.fromisoformat(options["last_purchase"]))
-        region = st.sidebar.selectbox("Customer state", ["All"] + options["regions"])
-        seller = st.sidebar.selectbox("Seller filter", ["All"] + options["seller_ids"])
-        category = st.sidebar.selectbox("Product category", ["All"] + options["categories"])
+        start = st.sidebar.date_input("Purchase from", date.fromisoformat(options["first_purchase"]), key="filter_start")
+        end = st.sidebar.date_input("Purchase through", date.fromisoformat(options["last_purchase"]), key="filter_end")
+        region = st.sidebar.selectbox("Customer state", ["All"] + options["regions"], key="filter_region")
+        seller = st.sidebar.selectbox("Seller filter", ["All"] + options["seller_ids"], key="filter_seller")
+        category = st.sidebar.selectbox("Product category", ["All"] + options["categories"], key="filter_category")
         params = {"start_date": start.isoformat(), "end_date": end.isoformat(),
                   "region": None if region == "All" else region,
                   "seller_id": None if seller == "All" else seller,
                   "product_category": None if category == "All" else category}
+        if end < start:
+            st.error("Purchase through must be on or after Purchase from. Your other filters are retained.")
+            return
         st.sidebar.caption("Local demonstration. Human decisions persist separately from historical orders.")
         st.header(page)
         with st.spinner("Loading historical evidence…"):
             if page == "Overview":
                 show_overview(params)
             elif page == "Orders & review queue":
-                show_orders(params)
+                show_orders(params, options)
             elif page == "Logistics":
                 show_logistics(params)
             elif page == "Seller intelligence":
